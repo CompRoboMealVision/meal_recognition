@@ -77,7 +77,14 @@ def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, n
     # This is the same problem as finding the biggest clique
     # in an undirected graph.
     groups = findMaximalClique(connections.tolist())
-    print groups
+    # print groups
+    # print len(groups[0])
+
+    #Lets just take the first one
+    group = groups[0]
+
+    for i in group:
+        cv2.circle(final_image, (window_xs[i], window_ys[i]), 3, (255, 255, 0), 3)
                 
 
     return final_image
@@ -140,8 +147,8 @@ if __name__ == '__main__':
     image4 = cv2.imread('../images/Food_Plate_Captures/004.png', 1)
     image5 = cv2.imread('../images/Food_Plate_Captures/005.png', 1)
 
-    # images = [image1, image2, image3, image4, image5]
-    images = [image1]
+    images = [image1, image2, image3, image4, image5]
+    # images = [image1]
 
     num_images = len(images)
     
