@@ -69,23 +69,27 @@ def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, n
     # connections[i, j] == True if the point j is in A_i 
     #                              and point i is in A_j
     connections = C * C.T
-    # print connections
-    # print zip(window_xs, window_ys)
 
     # We want to group our points together, to find the ones
     # that fall on the same ellipse.
     # This is the same problem as finding the biggest clique
     # in an undirected graph.
     groups = findMaximalClique(connections.tolist())
-    # print groups
-    # print len(groups[0])
 
     #Lets just take the first one
     group = groups[0]
 
+
+    # Plot the points that are our best guesses for the ellipse
     for i in group:
         cv2.circle(final_image, (window_xs[i], window_ys[i]), 3, (255, 255, 0), 3)
-                
+    
+    group_xs = window_xs[group]
+    group_ys = window_ys[group]
+    # cv2.fitEllipse wants a 2xn numpy array
+    points = np.vstack((group_xs, group_ys)).T
+    ellipse_points = cv2.fitEllipse(points)
+    cv2.ellipse(final_image, ellipse_points, (0, 255, 0), 2)
 
     return final_image
 
@@ -157,7 +161,7 @@ if __name__ == '__main__':
 
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
-        isolated_image = isolatePlate(image, num_contours=5, num_windows=30)
+        isolated_image = isolatePlate(image, num_contours=5, num_windows=25)
         # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         # concated_images = np.concatenate((gray_image, isolated_image), axis=1)
         # cv2.imshow('Image ', isolated_image)
@@ -168,7 +172,7 @@ if __name__ == '__main__':
         plt.xticks([]), plt.yticks([])
 
         fig.add_subplot(num_images, 2, 2*i+2)
-        plt.imshow(isolated_image, cmap='gray')
+        plt.imshow(solated_image, cmap='gray')
         # plt.title('Isolated Image')
         plt.xticks([]), plt.yticks([])
 
