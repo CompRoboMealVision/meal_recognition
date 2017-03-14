@@ -41,29 +41,40 @@ def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, n
 
     gx = cv2.Sobel(image_gray,cv2.CV_64F,1,0,ksize=5)
     gy = cv2.Sobel(image_gray,cv2.CV_64F,0,1,ksize=5)
-    final_image = image_with_windows#final_image = drawNormals(image_with_windows, window_xs, window_ys, gx, gy)
+    final_image = drawNormals(image_with_windows, window_xs, window_ys, gx, gy)
     thetas = calcTangents(window_xs, window_ys, gx, gy)
 
     x1 = window_xs[0]
     y1 = window_ys[0]
-    angle = thetas[0]
+    # angle = thetas[0]
 
-    left = -100
-    x_left = np.cos(angle)*left + x1
-    y_left = np.sin(angle)*left + y1
-    right = 1000
-    x_right = np.cos(angle)*right + x1
-    y_right = np.sin(angle)*right + y1
-    # import pdb; pdb.set_trace()
+    # left = -100
+    # x_left = np.cos(angle)*left + x1
+    # y_left = np.sin(angle)*left + y1
+    # right = 1000
+    # x_right = np.cos(angle)*right + x1
+    # y_right = np.sin(angle)*right + y1
+    # # import pdb; pdb.set_trace()
 
-    m = (y_left - y_right)/(x_left - x_right)
+    # m = (y_left - y_right)/(x_left - x_right)
     cv2.circle(final_image, (x1, y1), 3, (0, 255, 255), 3)
 
-    cv2.line(final_image, (int(x_left), int(y_left)), (int(x_right), int(y_right)), color=(255, 0, 0), thickness=2)
+    # cv2.line(final_image, (int(x_left), int(y_left)), (int(x_right), int(y_right)), color=(255, 0, 0), thickness=2)
 
     
+    # for (x2, y2) in zip(window_xs, window_ys):
+    #     if inRegion(m, (x_left, y_left), (x2, y2)):
+    #         # Draw a circle at that point
+    #         # We pass in (y2, x2) because that corresponds to (row, col)
+    #         cv2.circle(final_image, (x2, y2), 1, (0, 255, 0), 2)
+
+    normal_vec_x = gx[y1, x1]
+    normal_vec_y = gy[y1, x1]
+    normal_vec = np.array([normal_vec_x, normal_vec_y])
+    origin_vec = np.array([x1, y1])
     for (x2, y2) in zip(window_xs, window_ys):
-        if inRegion(m, (x_left, y_left), (x2, y2)):
+        point_vec = np.array([x2, y2])
+        if inDirection(normal_vec, origin_vec, point_vec):
             # Draw a circle at that point
             # We pass in (y2, x2) because that corresponds to (row, col)
             cv2.circle(final_image, (x2, y2), 1, (0, 255, 0), 2)
@@ -119,6 +130,15 @@ def drawNormals(image, window_xs, window_ys, gx, gy):
         y2 = np.sin(theta)*mag + row
         cv2.line(im, (col, row), (int(x2),int(y2)), color=(255, 0, 0), thickness=2)
     return im
+
+def inDirection(normal, origin, point):
+    """ Tells if point is in the direction of the normal to origin.
+        nomral: Normal vector at origin
+        origin: a 2x1 position vector 
+        point: a 2x1 position vector. """
+    diff = point - origin
+    double_dot = np.dot(diff, normal)
+    return double_dot > 0
 
 def inRegion(m, (x1, y1), (x2, y2)):
     """ Detect if a point (x2, y2) is in a region bounded below 
