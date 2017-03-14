@@ -20,7 +20,7 @@ def splitContours(contours):
 def splitLine(line):
     """Splits a line on horizontal or vertical segments"""
     # Find a point where our line changes direction
-    l = line
+    l = np.copy(line)
     change = l[2:] - l[:-2]
     # Create breaks where derivative equals 0
     break_indicies = np.unique(np.where(change == 0)[0])

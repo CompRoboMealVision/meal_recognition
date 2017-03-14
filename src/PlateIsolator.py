@@ -29,15 +29,21 @@ def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, n
     sorted_data = sorted(split_contours, key=lambda curve: cv2.arcLength(curve, closed=False), reverse=True)
 
     # Create an image with only the longest contours
-    print len(sorted_data)
     contour_image = np.zeros(edges.shape)
+    # NOTE: Still unsure why drawing all contors simultaneously results in bad lines.
+    big_contours = sorted_data[0:num_contours]
     for i in range(num_contours):
-        cv2.drawContours(contour_image, sorted_data[i], -1, (255, 0, 0), 1)
+        cv2.drawContours(contour_image, big_contours[i], -1, (255, 0, 0), 1)
 
-    # window_xs, window_ys = generateWindowCoords(contour_image, num_windows)
-    # image_with_windows = drawWindows(np.copy(contour_image), 20, window_xs, window_ys)
+    # Draw windows around random points
+    window_xs, window_ys = generateWindowCoords(contour_image, num_windows)
+    image_with_windows = drawWindows(image, window_xs, window_ys)
 
-    return contour_image
+    gx = cv2.Sobel(image_gray,cv2.CV_64F,1,0,ksize=5)
+    gy = cv2.Sobel(image_gray,cv2.CV_64F,0,1,ksize=5)
+    final_image = drawTangents(image_with_windows, window_xs, window_ys, gx, gy)
+
+    return final_image
 
 
 def generateWindowCoords(edges, num_windows):
@@ -54,15 +60,29 @@ def generateWindowCoords(edges, num_windows):
     
     return selected_xs, selected_ys
 
-def drawWindows(image, width, window_xs, window_ys):
+def drawWindows(image, window_xs, window_ys, width=20):
     """ Draw squares at the specified coordinates on an image. """
+    im = np.copy(image)
     color = (255, 255, 255)
     for (x,y) in zip(window_xs, window_ys):
         top_left = (x - width/2, y - width/2)
         bot_right = (x + width/2, y + width/2)
-        cv2.rectangle(image, top_left, bot_right, color, 1)
+        cv2.rectangle(im, top_left, bot_right, color, 1)
 
-    return image
+    return im
+
+def drawTangents(image, window_xs, window_ys, gx, gy):
+    """ Draws tangent line at window coordinates. """
+    im = np.copy(image)
+    grad_angle = np.arctan2(gy, gx)
+    grad_mag = np.sqrt(gx**2 + gy**2)
+    for (col, row) in zip(window_xs, window_ys):
+        theta = grad_angle[row, col]
+        mag = grad_mag[row, col] * 0.01
+        x2 = np.cos(theta)*mag + col
+        y2 = np.sin(theta)*mag + row
+        cv2.line(im, (col, row), (int(x2),int(y2)), color=(255, 0, 0), thickness=2)
+    return im
 
 if __name__ == '__main__':
     slider_window = SliderWindow()
@@ -80,7 +100,7 @@ if __name__ == '__main__':
 
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
-        isolated_image = isolatePlate(image, num_contours = 5)
+        isolated_image = isolatePlate(image, num_contours=5, num_windows=20)
         # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         # concated_images = np.concatenate((gray_image, isolated_image), axis=1)
         # cv2.imshow('Image ', isolated_image)
