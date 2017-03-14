@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from SliderWindow import SliderWindow
 from ContourSplitter import splitContours
+from CliqueFinder import findMaximalClique
 
 
 def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, num_windows=20):
@@ -36,28 +37,48 @@ def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, n
         cv2.drawContours(contour_image, big_contours[i], -1, (255, 0, 0), 1)
 
     # Draw windows around random points
+
     window_xs, window_ys = generateWindowCoords(contour_image, num_windows)
+    sorted_args = np.argsort(window_xs)
+    window_xs = window_xs[sorted_args]
+    window_ys = window_ys[sorted_args]
     image_with_windows = drawWindows(image, window_xs, window_ys)
 
     gx = cv2.Sobel(image_gray,cv2.CV_64F,1,0,ksize=5)
     gy = cv2.Sobel(image_gray,cv2.CV_64F,0,1,ksize=5)
     final_image = drawNormals(image_with_windows, window_xs, window_ys, gx, gy)
 
-    x1 = window_xs[0]
-    y1 = window_ys[0]
+    # C is a conjunction matrix where
+    # A_i = the region bounded by the tangent at point i
+    # C[i, j] == True if the point j is in A_i
+    C = np.zeros((window_xs.size, window_xs.size), dtype=bool)
 
-    cv2.circle(final_image, (x1, y1), 3, (0, 255, 255), 3)
+    for i, (x1, y1) in enumerate(zip(window_xs, window_ys)):
 
-    normal_vec_x = gx[y1, x1]
-    normal_vec_y = gy[y1, x1]
-    normal_vec = np.array([normal_vec_x, normal_vec_y])
-    origin_vec = np.array([x1, y1])
-    for (x2, y2) in zip(window_xs, window_ys):
-        point_vec = np.array([x2, y2])
-        if inDirection(normal_vec, origin_vec, point_vec):
-            # Draw a circle at that point
-            # We pass in (y2, x2) because that corresponds to (row, col)
-            cv2.circle(final_image, (x2, y2), 1, (0, 255, 0), 2)
+        normal_x = gx[y1, x1]
+        normal_y = gy[y1, x1]
+        normal_vec = np.array([normal_x, normal_y])
+        origin_vec = np.array([x1, y1])
+
+        for j, (x2, y2) in enumerate(zip(window_xs, window_ys)):
+            point_vec = np.array([x2, y2])
+            if inDirection(normal_vec, origin_vec, point_vec):
+                C[i, j] = True
+
+    # connections is like C except:
+    # connections[i, j] == True if the point j is in A_i 
+    #                              and point i is in A_j
+    connections = C * C.T
+    # print connections
+    # print zip(window_xs, window_ys)
+
+    # We want to group our points together, to find the ones
+    # that fall on the same ellipse.
+    # This is the same problem as finding the biggest clique
+    # in an undirected graph.
+    groups = findMaximalClique(connections.tolist())
+    print groups
+                
 
     return final_image
 
@@ -119,8 +140,8 @@ if __name__ == '__main__':
     image4 = cv2.imread('../images/Food_Plate_Captures/004.png', 1)
     image5 = cv2.imread('../images/Food_Plate_Captures/005.png', 1)
 
-    images = [image1, image2, image3, image4, image5]
-    # images = [image1]
+    # images = [image1, image2, image3, image4, image5]
+    images = [image1]
 
     num_images = len(images)
     
@@ -129,7 +150,7 @@ if __name__ == '__main__':
 
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
-        isolated_image = isolatePlate(image, num_contours=5, num_windows=20)
+        isolated_image = isolatePlate(image, num_contours=5, num_windows=30)
         # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         # concated_images = np.concatenate((gray_image, isolated_image), axis=1)
         # cv2.imshow('Image ', isolated_image)
