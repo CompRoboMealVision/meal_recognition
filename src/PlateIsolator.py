@@ -12,14 +12,17 @@ from ContourSplitter import splitContours
 from CliqueFinder import findMaximalClique
 
 
+@profile
 def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, num_windows=20):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
         http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
     # Convert to greyscale
     image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Equalize the contrast
+    image_equalized = cv2.equalizeHist(image_gray)
     # Get edges using canny edge detection. Params not tuned.
-    edges = cv2.Canny(image_gray, canny_thresh1, canny_thresh2)
+    edges = cv2.Canny(image_equalized, canny_thresh1, canny_thresh2)
     kernel = np.ones((3,3),np.uint8)
 
     contours, hierarchy = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
@@ -37,15 +40,14 @@ def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, n
         cv2.drawContours(contour_image, big_contours[i], -1, (255, 0, 0), 1)
 
     # Draw windows around random points
-
     window_xs, window_ys = generateWindowCoords(contour_image, num_windows)
     sorted_args = np.argsort(window_xs)
     window_xs = window_xs[sorted_args]
     window_ys = window_ys[sorted_args]
     image_with_windows = drawWindows(image, window_xs, window_ys)
 
-    gx = cv2.Sobel(image_gray,cv2.CV_64F,1,0,ksize=5)
-    gy = cv2.Sobel(image_gray,cv2.CV_64F,0,1,ksize=5)
+    gx = cv2.Sobel(image_equalized,cv2.CV_64F,1,0,ksize=5)
+    gy = cv2.Sobel(image_equalized,cv2.CV_64F,0,1,ksize=5)
     final_image = drawNormals(image_with_windows, window_xs, window_ys, gx, gy)
 
     # C is a conjunction matrix where
@@ -76,9 +78,9 @@ def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, n
     # in an undirected graph.
     groups = findMaximalClique(connections.tolist())
 
-    #Lets just take the first one
+    # TODO: Lets find a better way to get the most sensible group
+    # Right now, we're just taking the first.
     group = groups[0]
-
 
     # Plot the points that are our best guesses for the ellipse
     for i in group:
@@ -158,10 +160,9 @@ if __name__ == '__main__':
     
     fig = plt.figure(figsize=(7, 20))
 
-
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
-        isolated_image = isolatePlate(image, num_contours=5, num_windows=25)
+        isolated_image = isolatePlate(image, num_contours=5, num_windows=40)
         # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         # concated_images = np.concatenate((gray_image, isolated_image), axis=1)
         # cv2.imshow('Image ', isolated_image)
@@ -172,12 +173,11 @@ if __name__ == '__main__':
         plt.xticks([]), plt.yticks([])
 
         fig.add_subplot(num_images, 2, 2*i+2)
-        plt.imshow(solated_image, cmap='gray')
+        plt.imshow(isolated_image, cmap='gray')
         # plt.title('Isolated Image')
         plt.xticks([]), plt.yticks([])
 
         # cv2.waitKey(1)
     plt.tight_layout()
-    plt.show()
-
+    # plt.show()
 

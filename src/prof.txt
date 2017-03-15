@@ -1,0 +1,91 @@
+Timer unit: 1e-06 s
+
+Total time: 1.82135 s
+File: ./PlateIsolator.py
+Function: isolatePlate at line 15
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    15                                           @profile
+    16                                           def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, num_windows=20):
+    17                                               """ Isolate a food plate from an image with extra data.
+    18                                                   Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
+    19                                                   http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
+    20                                               # Convert to greyscale
+    21         5         2278    455.6      0.1      image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    22                                               # Equalize the contrast
+    23         5          288     57.6      0.0      image_equalized = cv2.equalizeHist(image_gray)
+    24                                               # Get edges using canny edge detection. Params not tuned.
+    25         5         2122    424.4      0.1      edges = cv2.Canny(image_equalized, canny_thresh1, canny_thresh2)
+    26         5           72     14.4      0.0      kernel = np.ones((3,3),np.uint8)
+    27                                           
+    28         5         1389    277.8      0.1      contours, hierarchy = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    29                                                # Split the contours up, in order to break erroneous connections
+    30         5        27846   5569.2      1.5      split_contours = splitContours(contours)
+    31                                           
+    32                                               # Sort the contours according to their length
+    33         5         2214    442.8      0.1      sorted_data = sorted(split_contours, key=lambda curve: cv2.arcLength(curve, closed=False), reverse=True)
+    34                                           
+    35                                               # Create an image with only the longest contours
+    36         5          198     39.6      0.0      contour_image = np.zeros(edges.shape)
+    37                                               # NOTE: Still unsure why drawing all contors simultaneously results in bad lines.
+    38         5            9      1.8      0.0      big_contours = sorted_data[0:num_contours]
+    39        30           48      1.6      0.0      for i in range(num_contours):
+    40        25          761     30.4      0.0          cv2.drawContours(contour_image, big_contours[i], -1, (255, 0, 0), 1)
+    41                                           
+    42                                               # Draw windows around random points
+    43         5         1912    382.4      0.1      window_xs, window_ys = generateWindowCoords(contour_image, num_windows)
+    44         5           38      7.6      0.0      sorted_args = np.argsort(window_xs)
+    45         5            8      1.6      0.0      window_xs = window_xs[sorted_args]
+    46         5            6      1.2      0.0      window_ys = window_ys[sorted_args]
+    47         5          657    131.4      0.0      image_with_windows = drawWindows(image, window_xs, window_ys)
+    48                                           
+    49         5         2510    502.0      0.1      gx = cv2.Sobel(image_equalized,cv2.CV_64F,1,0,ksize=5)
+    50         5         2642    528.4      0.1      gy = cv2.Sobel(image_equalized,cv2.CV_64F,0,1,ksize=5)
+    51         5        13182   2636.4      0.7      final_image = drawNormals(image_with_windows, window_xs, window_ys, gx, gy)
+    52                                           
+    53                                               # C is a conjunction matrix where
+    54                                               # A_i = the region bounded by the tangent at point i
+    55                                               # C[i, j] == True if the point j is in A_i
+    56         5           36      7.2      0.0      C = np.zeros((window_xs.size, window_xs.size), dtype=bool)
+    57                                           
+    58       205          277      1.4      0.0      for i, (x1, y1) in enumerate(zip(window_xs, window_ys)):
+    59                                           
+    60       200          283      1.4      0.0          normal_x = gx[y1, x1]
+    61       200          241      1.2      0.0          normal_y = gy[y1, x1]
+    62       200          440      2.2      0.0          normal_vec = np.array([normal_x, normal_y])
+    63       200          363      1.8      0.0          origin_vec = np.array([x1, y1])
+    64                                           
+    65      8200        10048      1.2      0.6          for j, (x2, y2) in enumerate(zip(window_xs, window_ys)):
+    66      8000        15256      1.9      0.8              point_vec = np.array([x2, y2])
+    67      8000        24271      3.0      1.3              if inDirection(normal_vec, origin_vec, point_vec):
+    68      5073         6570      1.3      0.4                  C[i, j] = True
+    69                                           
+    70                                               # connections is like C except:
+    71                                               # connections[i, j] == True if the point j is in A_i 
+    72                                               #                              and point i is in A_j
+    73         5           58     11.6      0.0      connections = C * C.T
+    74                                           
+    75                                               # We want to group our points together, to find the ones
+    76                                               # that fall on the same ellipse.
+    77                                               # This is the same problem as finding the biggest clique
+    78                                               # in an undirected graph.
+    79         5      1704255 340851.0     93.6      groups = findMaximalClique(connections.tolist())
+    80                                           
+    81                                               # TODO: Lets find a better way to get the most sensible group
+    82                                               # Right now, we're just taking the first.
+    83         5           10      2.0      0.0      group = groups[0]
+    84                                           
+    85                                               # Plot the points that are our best guesses for the ellipse
+    86        53           65      1.2      0.0      for i in group:
+    87        48          449      9.4      0.0          cv2.circle(final_image, (window_xs[i], window_ys[i]), 3, (255, 255, 0), 3)
+    88                                               
+    89         5           47      9.4      0.0      group_xs = window_xs[group]
+    90         5           16      3.2      0.0      group_ys = window_ys[group]
+    91                                               # cv2.fitEllipse wants a 2xn numpy array
+    92         5          129     25.8      0.0      points = np.vstack((group_xs, group_ys)).T
+    93         5          133     26.6      0.0      ellipse_points = cv2.fitEllipse(points)
+    94         5          216     43.2      0.0      cv2.ellipse(final_image, ellipse_points, (0, 255, 0), 2)
+    95                                           
+    96         5            6      1.2      0.0      return final_image
+
