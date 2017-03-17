@@ -12,7 +12,7 @@ from ContourSplitter import splitContours
 from CliqueFinder import findMaximalClique
 
 
-@profile
+# @profile
 def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, num_windows=20):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
@@ -78,20 +78,29 @@ def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, n
     # in an undirected graph.
     groups = findMaximalClique(connections.tolist())
 
-    # TODO: Lets find a better way to get the most sensible group
-    # Right now, we're just taking the first.
-    group = groups[0]
+    best_fit = 0
+    best_ellipse = 0
+    for group in groups:
 
     # Plot the points that are our best guesses for the ellipse
-    for i in group:
-        cv2.circle(final_image, (window_xs[i], window_ys[i]), 3, (255, 255, 0), 3)
-    
-    group_xs = window_xs[group]
-    group_ys = window_ys[group]
-    # cv2.fitEllipse wants a 2xn numpy array
-    points = np.vstack((group_xs, group_ys)).T
-    ellipse_points = cv2.fitEllipse(points)
-    cv2.ellipse(final_image, ellipse_points, (0, 255, 0), 2)
+    # for i in group:
+    #     cv2.circle(final_image, (window_xs[i], window_ys[i]), 3, (255, 255, 0), 3)
+        group_xs = window_xs[group]
+        group_ys = window_ys[group]
+        # cv2.fitEllipse wants a 2xn numpy array
+        points = np.vstack((group_xs, group_ys)).T
+        ellipse_points = cv2.fitEllipse(points)
+        # Create an empty image with just the ellipse
+        ellipse_image = np.zeros(edges.shape)
+        cv2.ellipse(ellipse_image, ellipse_points, (255, 255, 255), 3)
+        # We measure error by looking how well ellipses line up with the edges
+        fitting_constant = np.sum(np.logical_and(ellipse_image, edges))
+        # print fitting_constant
+        if fitting_constant > best_fit:
+            best_fit = fitting_constant
+            best_ellipse = ellipse_points
+    print best_fit
+    cv2.ellipse(final_image, ellipse_points, (0, 255, 0), 3)
 
     return final_image
 
@@ -143,8 +152,8 @@ def inDirection(normal, origin, point):
     double_dot = np.dot(diff, normal)
     return double_dot > 0
 
-
-if __name__ == '__main__':
+def refineParams():
+    """ Run main function while allowing user to manipulate parameters. """
     slider_window = SliderWindow()
 
     image1 = cv2.imread('../images/Food_Plate_Captures/001.png', 1)
@@ -154,7 +163,51 @@ if __name__ == '__main__':
     image5 = cv2.imread('../images/Food_Plate_Captures/005.png', 1)
 
     images = [image1, image2, image3, image4, image5]
-    # images = [image1]
+
+    
+
+    last_num_windows = 0
+    last_canny_thresh1 = 0
+    last_canny_thresh2 = 0
+
+    while (True):
+        num_windows = slider_window.num_windows
+        canny_thresh1 = slider_window.canny_thresh1
+        canny_thresh2 = slider_window.canny_thresh2
+        param_has_changed = (num_windows != last_num_windows
+                        or canny_thresh1 != last_canny_thresh1
+                        or canny_thresh2 != last_canny_thresh2)
+        if param_has_changed:
+            try:
+
+                isolated_image1 = isolatePlate(image1, num_contours=5, num_windows = num_windows,
+                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2)
+                isolated_image2 = isolatePlate(image2, num_contours=5, num_windows = num_windows,
+                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2)
+                cv2.imshow('Image 1', isolated_image1)
+                cv2.imshow('Image 2', isolated_image2)
+            except Exception as e:
+                print e
+        # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        # 
+            
+        
+        cv2.waitKey(1)
+        last_num_windows = num_windows
+        last_canny_thresh1 = canny_thresh1
+        last_canny_thresh2 = canny_thresh2
+
+def run():
+    # slider_window = SliderWindow()
+
+    image1 = cv2.imread('../images/Food_Plate_Captures/001.png', 1)
+    image2 = cv2.imread('../images/Food_Plate_Captures/002.png', 1)
+    image3 = cv2.imread('../images/Food_Plate_Captures/003.png', 1)
+    image4 = cv2.imread('../images/Food_Plate_Captures/004.png', 1)
+    image5 = cv2.imread('../images/Food_Plate_Captures/005.png', 1)
+
+    # images = [image1, image2, image3, image4, image5]
+    images = [image1]
 
     num_images = len(images)
     
@@ -162,7 +215,7 @@ if __name__ == '__main__':
 
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
-        isolated_image = isolatePlate(image, num_contours=5, num_windows=40)
+        isolated_image = isolatePlate(image, num_contours=5, num_windows=60)
         # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         # concated_images = np.concatenate((gray_image, isolated_image), axis=1)
         # cv2.imshow('Image ', isolated_image)
@@ -179,5 +232,10 @@ if __name__ == '__main__':
 
         # cv2.waitKey(1)
     plt.tight_layout()
-    # plt.show()
+    plt.show()
+
+
+if __name__ == '__main__':
+    # refineParams()
+    run()
 
