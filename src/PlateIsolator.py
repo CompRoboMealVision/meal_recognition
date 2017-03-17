@@ -39,17 +39,20 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, nu
     for i in range(num_contours):
         cv2.drawContours(contour_image, big_contours[i], -1, (255, 0, 0), 1)
 
-    # Draw windows around random points
-    window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=window_dist)
-    sorted_args = np.argsort(window_xs)
-    window_xs = window_xs[sorted_args]
-    window_ys = window_ys[sorted_args]
-    image_with_ellipse = drawEllipse(image, image_equalized, edges, window_xs, window_ys)
-
+    drew_elipse = False
+    while not drew_elipse:
+        # Draw windows around random points
+        window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=window_dist)
+        sorted_args = np.argsort(window_xs)
+        window_xs = window_xs[sorted_args]
+        window_ys = window_ys[sorted_args]
+        image_with_ellipse, drew_elipse = drawEllipse(image, image_equalized, edges, window_xs, window_ys)
     return image_with_ellipse
 
 def drawEllipse(image, image_equalized, edges, window_xs, window_ys):
-    """ Draws the best ellipse through the given windows."""
+    """ Draws the best ellipse through the given windows. 
+        Returns: image_with_ellipse, an image with an ellipse drawn on it
+                 drew_elipse, indicates whether an ellipse was drawn successfully."""
     
     
     image_with_windows = drawWindows(image, window_xs, window_ys)
@@ -111,10 +114,13 @@ def drawEllipse(image, image_equalized, edges, window_xs, window_ys):
                 best_fit = fitting_constant
                 best_ellipse = ellipse_points
 
+    drew_elipse = False
+
     if best_ellipse:
         cv2.ellipse(final_image, best_ellipse, (255, 255, 255), 3)
+        drew_elipse = True
 
-    return final_image
+    return final_image, drew_elipse
 
 def generateWindowCoords(edges, num_windows, min_dist=0):
     """ Generates random coordinates for the windows which
