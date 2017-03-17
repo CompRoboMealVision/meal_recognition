@@ -13,7 +13,7 @@ from CliqueFinder import findMaximalClique
 
 
 # @profile
-def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, num_windows=20):
+def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, num_windows=20, window_dist=0):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
         http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
@@ -40,7 +40,7 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, nu
         cv2.drawContours(contour_image, big_contours[i], -1, (255, 0, 0), 1)
 
     # Draw windows around random points
-    window_xs, window_ys = generateWindowCoords(contour_image, num_windows)
+    window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=window_dist)
     sorted_args = np.argsort(window_xs)
     window_xs = window_xs[sorted_args]
     window_ys = window_ys[sorted_args]
@@ -89,23 +89,27 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, nu
         group_ys = window_ys[group]
         # cv2.fitEllipse wants a 2xn numpy array
         points = np.vstack((group_xs, group_ys)).T
-        ellipse_points = cv2.fitEllipse(points)
-        # Create an empty image with just the ellipse
-        ellipse_image = np.zeros(edges.shape)
-        cv2.ellipse(ellipse_image, ellipse_points, (255, 255, 255), 3)
-        # We measure error by looking how well ellipses line up with the edges
-        fitting_constant = np.sum(np.logical_and(ellipse_image, edges))
-        # print fitting_constant
-        if fitting_constant > best_fit:
-            best_fit = fitting_constant
-            best_ellipse = ellipse_points
-    print best_fit
-    cv2.ellipse(edges, ellipse_points, (255, 255, 255), 3)
+        
+        num_points = points.shape[0]
+        if num_points > 5:
+            ellipse_points = cv2.fitEllipse(points)
+            # Create an empty image with just the ellipse
+            ellipse_image = np.zeros(edges.shape)
+            cv2.ellipse(ellipse_image, ellipse_points, (255, 255, 255), 3)
+            # We measure error by looking how well ellipses line up with the edges
+            fitting_constant = np.sum(np.logical_and(ellipse_image, edges))
+            # print fitting_constant
+            if fitting_constant > best_fit:
+                best_fit = fitting_constant
+                best_ellipse = ellipse_points
 
-    return edges
+    if best_ellipse:
+        cv2.ellipse(final_image, best_ellipse, (255, 255, 255), 3)
+
+    return final_image
 
 
-def generateWindowCoords(edges, num_windows):
+def generateWindowCoords(edges, num_windows, min_dist=0):
     """ Generates random coordinates for the windows which
         will be used for ellipse detection. """
     # Converts the edge image to coordinate of points
@@ -113,10 +117,19 @@ def generateWindowCoords(edges, num_windows):
     row_coords, col_coords = np.nonzero(edges)
     number_of_points = col_coords.size
     # Generate random numbers from 0 to number_of_points
-    box_indices = np.random.choice(number_of_points, num_windows)
-    selected_xs = col_coords[box_indices]
-    selected_ys = row_coords[box_indices]
-    
+
+    selected_xs = np.array([], dtype=int)
+    selected_ys = np.array([], dtype=int)
+
+    while selected_xs.size < num_windows:
+        box_indices = np.random.choice(number_of_points, 1)
+        x = col_coords[box_indices]
+        y = row_coords[box_indices]
+        dists = np.sqrt((selected_xs - x)**2 + (selected_ys-y)**2)
+        # Check that its a minimum distance from other points
+        if not np.any(dists < min_dist):
+            selected_xs = np.append(selected_xs, x)
+            selected_ys = np.append(selected_ys, y)
     return selected_xs, selected_ys
 
 def drawWindows(image, window_xs, window_ys, width=20):
@@ -174,18 +187,34 @@ def refineParams():
         num_windows = slider_window.num_windows
         canny_thresh1 = slider_window.canny_thresh1
         canny_thresh2 = slider_window.canny_thresh2
+        points_dist = slider_window.points_dist
         param_has_changed = (num_windows != last_num_windows
                         or canny_thresh1 != last_canny_thresh1
-                        or canny_thresh2 != last_canny_thresh2)
+                        or canny_thresh2 != last_canny_thresh2
+                        or points_dist != last_points_dist)
         if param_has_changed:
             try:
 
                 isolated_image1 = isolatePlate(image1, num_contours=5, num_windows = num_windows,
-                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2)
+                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                         window_dist=points_dist)
                 isolated_image2 = isolatePlate(image2, num_contours=5, num_windows = num_windows,
-                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2)
+                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                         window_dist=points_dist)
+                isolated_image3 = isolatePlate(image3, num_contours=5, num_windows = num_windows,
+                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                         window_dist=points_dist)
+                isolated_image4 = isolatePlate(image4, num_contours=5, num_windows = num_windows,
+                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                         window_dist=points_dist)
+                isolated_image5 = isolatePlate(image5, num_contours=5, num_windows = num_windows,
+                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                         window_dist=points_dist)
                 cv2.imshow('Image 1', isolated_image1)
                 cv2.imshow('Image 2', isolated_image2)
+                cv2.imshow('Image 3', isolated_image3)
+                cv2.imshow('Image 4', isolated_image4)
+                cv2.imshow('Image 5', isolated_image5)
             except Exception as e:
                 print e
         # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -196,6 +225,7 @@ def refineParams():
         last_num_windows = num_windows
         last_canny_thresh1 = canny_thresh1
         last_canny_thresh2 = canny_thresh2
+        last_points_dist = points_dist
 
 def run():
     # slider_window = SliderWindow()
@@ -214,7 +244,7 @@ def run():
 
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
-        isolated_image = isolatePlate(image, num_contours=5, num_windows=60)
+        isolated_image = isolatePlate(image, num_contours=5, num_windows=20)
         # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         # concated_images = np.concatenate((gray_image, isolated_image), axis=1)
         # cv2.imshow('Image ', isolated_image)
@@ -235,6 +265,6 @@ def run():
 
 
 if __name__ == '__main__':
-    # refineParams()
-    run()
+    refineParams()
+    # run()
 
