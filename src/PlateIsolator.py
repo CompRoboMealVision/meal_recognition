@@ -13,7 +13,7 @@ from CliqueFinder import findMaximalClique
 
 
 # @profile
-def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, num_windows=20):
+def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, num_windows=20):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
         http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
@@ -100,9 +100,9 @@ def isolatePlate(image, canny_thresh1=100, canny_thresh2=200, num_contours=10, n
             best_fit = fitting_constant
             best_ellipse = ellipse_points
     print best_fit
-    cv2.ellipse(final_image, ellipse_points, (0, 255, 0), 3)
+    cv2.ellipse(edges, ellipse_points, (255, 255, 255), 3)
 
-    return final_image
+    return edges
 
 
 def generateWindowCoords(edges, num_windows):
@@ -206,8 +206,7 @@ def run():
     image4 = cv2.imread('../images/Food_Plate_Captures/004.png', 1)
     image5 = cv2.imread('../images/Food_Plate_Captures/005.png', 1)
 
-    # images = [image1, image2, image3, image4, image5]
-    images = [image1]
+    images = [image1, image2, image3, image4, image5]
 
     num_images = len(images)
     
