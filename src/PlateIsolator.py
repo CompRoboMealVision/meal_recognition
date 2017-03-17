@@ -44,10 +44,18 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, nu
     sorted_args = np.argsort(window_xs)
     window_xs = window_xs[sorted_args]
     window_ys = window_ys[sorted_args]
+    image_with_ellipse = drawEllipse(image, image_equalized, edges, window_xs, window_ys)
+
+    return image_with_ellipse
+
+def drawEllipse(image, image_equalized, edges, window_xs, window_ys):
+    """ Draws the best ellipse through the given windows."""
+    
+    
     image_with_windows = drawWindows(image, window_xs, window_ys)
 
-    gx = cv2.Sobel(image_equalized,cv2.CV_64F,1,0,ksize=5)
-    gy = cv2.Sobel(image_equalized,cv2.CV_64F,0,1,ksize=5)
+    gx = cv2.Sobel(image_equalized, cv2.CV_64F,1,0,ksize=5)
+    gy = cv2.Sobel(image_equalized, cv2.CV_64F,0,1,ksize=5)
     final_image = drawNormals(image_with_windows, window_xs, window_ys, gx, gy)
 
     # C is a conjunction matrix where
@@ -107,7 +115,6 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, nu
         cv2.ellipse(final_image, best_ellipse, (255, 255, 255), 3)
 
     return final_image
-
 
 def generateWindowCoords(edges, num_windows, min_dist=0):
     """ Generates random coordinates for the windows which
@@ -265,6 +272,6 @@ def run():
 
 
 if __name__ == '__main__':
-    refineParams()
-    # run()
+    # refineParams()
+    run()
 
