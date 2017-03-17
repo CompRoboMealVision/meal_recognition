@@ -14,11 +14,13 @@ class SliderWindow(object):
         self.canny_thresh1 = 50
         self.canny_thresh2 = 200
         self.points_dist = 1
+        self.contour_thresh = 0.5
 
         cv2.createTrackbar('Number of windows', self.window_name, self.num_windows, 80, self.set_num_windows)
         cv2.createTrackbar('Canny Threshold 1', self.window_name, self.canny_thresh1, 255, self.set_thresh1)
         cv2.createTrackbar('Canny Threshold 2', self.window_name, self.canny_thresh2, 255, self.set_thresh2)
         cv2.createTrackbar('Dist between Points', self.window_name, self.points_dist, 11, self.set_points_dist)
+        cv2.createTrackbar('Contour Threshold', self.window_name, int(self.contour_thresh * 100), 100, self.set_contour_thresh)
     
     def set_num_windows(self, val):
         self.num_windows = val
@@ -28,6 +30,8 @@ class SliderWindow(object):
         self.canny_thresh2 = val
     def set_points_dist(self, val):
         self.points_dist = val
+    def set_contour_thresh(self, val):
+        self.contour_thresh=val/100.0
     # def set_hue_upper_bound(self, val):
     #     self.hue_upper_bound = val
     # def set_sat_lower_bound(self, val):

@@ -13,7 +13,7 @@ from CliqueFinder import findMaximalClique
 
 
 # @profile
-def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, num_windows=20, window_dist=0):
+def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, contour_thresh=0.5, num_windows=20, window_dist=0):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
         http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
@@ -33,13 +33,21 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, num_contours=10, nu
     sorted_data = sorted(split_contours, key=lambda curve: cv2.arcLength(curve, closed=False), reverse=True)
 
     # Create an image with only the longest contours
+    longest_contour = cv2.arcLength(sorted_data[0], closed=False)
+    # Create a list with all contours up to a certain threshold of the longest
+    big_contours = []
+    for contour in sorted_data:
+        if cv2.arcLength(contour, closed=False) >= contour_thresh*longest_contour:
+            big_contours.append(contour)
+
     contour_image = np.zeros(edges.shape)
     # NOTE: Still unsure why drawing all contors simultaneously results in bad lines.
-    big_contours = sorted_data[0:num_contours]
-    for i in range(num_contours):
-        cv2.drawContours(contour_image, big_contours[i], -1, (255, 0, 0), 1)
+    for contour in big_contours:
+        cv2.drawContours(contour_image, contour, -1, (255, 0, 0), 1)
 
     drew_elipse = False
+    # Sometimes drawEllipse doesn't draw an ellipse.
+    # We iterate until it does.
     while not drew_elipse:
         # Draw windows around random points
         window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=window_dist)
@@ -190,8 +198,6 @@ def refineParams():
 
     images = [image1, image2, image3, image4, image5]
 
-    
-
     last_num_windows = 0
     last_canny_thresh1 = 0
     last_canny_thresh2 = 0
@@ -201,26 +207,28 @@ def refineParams():
         canny_thresh1 = slider_window.canny_thresh1
         canny_thresh2 = slider_window.canny_thresh2
         points_dist = slider_window.points_dist
+        contour_thresh = slider_window.contour_thresh
         param_has_changed = (num_windows != last_num_windows
                         or canny_thresh1 != last_canny_thresh1
                         or canny_thresh2 != last_canny_thresh2
-                        or points_dist != last_points_dist)
+                        or points_dist != last_points_dist
+                        or contour_thresh != last_contour_thresh)
         if param_has_changed:
             try:
 
-                isolated_image1 = isolatePlate(image1, num_contours=5, num_windows = num_windows,
+                isolated_image1 = isolatePlate(image1, contour_thresh=contour_thresh, num_windows = num_windows,
                                          canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
                                          window_dist=points_dist)
-                isolated_image2 = isolatePlate(image2, num_contours=5, num_windows = num_windows,
+                isolated_image2 = isolatePlate(image2, contour_thresh=contour_thresh, num_windows = num_windows,
                                          canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
                                          window_dist=points_dist)
-                isolated_image3 = isolatePlate(image3, num_contours=5, num_windows = num_windows,
+                isolated_image3 = isolatePlate(image3, contour_thresh=contour_thresh, num_windows = num_windows,
                                          canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
                                          window_dist=points_dist)
-                isolated_image4 = isolatePlate(image4, num_contours=5, num_windows = num_windows,
+                isolated_image4 = isolatePlate(image4, contour_thresh=contour_thresh, num_windows = num_windows,
                                          canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
                                          window_dist=points_dist)
-                isolated_image5 = isolatePlate(image5, num_contours=5, num_windows = num_windows,
+                isolated_image5 = isolatePlate(image5, contour_thresh=contour_thresh, num_windows = num_windows,
                                          canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
                                          window_dist=points_dist)
                 cv2.imshow('Image 1', isolated_image1)
@@ -239,6 +247,7 @@ def refineParams():
         last_canny_thresh1 = canny_thresh1
         last_canny_thresh2 = canny_thresh2
         last_points_dist = points_dist
+        last_contour_thresh = contour_thresh
 
 def run():
     # slider_window = SliderWindow()
@@ -257,7 +266,7 @@ def run():
 
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
-        isolated_image = isolatePlate(image, num_contours=5, num_windows=20)
+        isolated_image = isolatePlate(image, contour_thresh=0.5, num_windows=20)
         # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         # concated_images = np.concatenate((gray_image, isolated_image), axis=1)
         # cv2.imshow('Image ', isolated_image)
@@ -278,6 +287,6 @@ def run():
 
 
 if __name__ == '__main__':
-    # refineParams()
-    run()
+    refineParams()
+    # run()
 
