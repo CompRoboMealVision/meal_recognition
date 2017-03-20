@@ -54,13 +54,14 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, contour_thresh=0.5,
         sorted_args = np.argsort(window_xs)
         window_xs = window_xs[sorted_args]
         window_ys = window_ys[sorted_args]
-        image_with_ellipse, drew_elipse = drawEllipse(image, image_equalized, edges, window_xs, window_ys)
-    return image_with_ellipse
+        image_with_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 9)
+    return image_with_ellipse, size_maximal_clique
 
-def drawEllipse(image, image_equalized, edges, window_xs, window_ys):
+def drawEllipse(image, image_equalized, edges, window_xs, window_ys, min_clique_size):
     """ Draws the best ellipse through the given windows. 
         Returns: image_with_ellipse, an image with an ellipse drawn on it
-                 drew_elipse, indicates whether an ellipse was drawn successfully."""
+                 drew_elipse, indicates whether an ellipse was drawn successfully
+                 size_maximal_clique, the size of the biggest clique."""
     
     
     image_with_windows = drawWindows(image, window_xs, window_ys)
@@ -97,38 +98,42 @@ def drawEllipse(image, image_equalized, edges, window_xs, window_ys):
     # in an undirected graph.
     groups = findMaximalClique(connections.tolist())
 
-    best_fit = 0
-    best_ellipse = 0
-    for group in groups:
-
-    # Plot the points that are our best guesses for the ellipse
-    # for i in group:
-    #     cv2.circle(final_image, (window_xs[i], window_ys[i]), 3, (255, 255, 0), 3)
-        group_xs = window_xs[group]
-        group_ys = window_ys[group]
-        # cv2.fitEllipse wants a 2xn numpy array
-        points = np.vstack((group_xs, group_ys)).T
-        
-        num_points = points.shape[0]
-        if num_points > 5:
-            ellipse_points = cv2.fitEllipse(points)
-            # Create an empty image with just the ellipse
-            ellipse_image = np.zeros(edges.shape)
-            cv2.ellipse(ellipse_image, ellipse_points, (255, 255, 255), 3)
-            # We measure error by looking how well ellipses line up with the edges
-            fitting_constant = np.sum(np.logical_and(ellipse_image, edges))
-            # print fitting_constant
-            if fitting_constant > best_fit:
-                best_fit = fitting_constant
-                best_ellipse = ellipse_points
+    size_maximal_clique = len(groups[0])
 
     drew_elipse = False
+    best_ellipse = 0
+    if size_maximal_clique >= min_clique_size:
+        best_fit = 0
+        
+        for group in groups:
+
+        # Plot the points that are our best guesses for the ellipse
+        # for i in group:
+        #     cv2.circle(final_image, (window_xs[i], window_ys[i]), 3, (255, 255, 0), 3)
+            group_xs = window_xs[group]
+            group_ys = window_ys[group]
+            # cv2.fitEllipse wants a 2xn numpy array
+            points = np.vstack((group_xs, group_ys)).T
+            
+            num_points = points.shape[0]
+            # We need a minimum of 5 points to draw an ellipse
+            if num_points > 5:
+                ellipse_points = cv2.fitEllipse(points)
+                # Create an empty image with just the ellipse
+                ellipse_image = np.zeros(edges.shape)
+                cv2.ellipse(ellipse_image, ellipse_points, (255, 255, 255), 3)
+                # We measure error by looking how well ellipses line up with the edges
+                fitting_constant = np.sum(np.logical_and(ellipse_image, edges))
+                # print fitting_constant
+                if fitting_constant > best_fit:
+                    best_fit = fitting_constant
+                    best_ellipse = ellipse_points
 
     if best_ellipse:
         cv2.ellipse(final_image, best_ellipse, (255, 255, 255), 3)
         drew_elipse = True
 
-    return final_image, drew_elipse
+    return final_image, drew_elipse, size_maximal_clique
 
 def generateWindowCoords(edges, num_windows, min_dist=0):
     """ Generates random coordinates for the windows which
@@ -214,32 +219,18 @@ def refineParams():
                         or points_dist != last_points_dist
                         or contour_thresh != last_contour_thresh)
         try:
-
-            isolated_image1 = isolatePlate(image1, contour_thresh=contour_thresh, num_windows = num_windows,
-                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                     window_dist=points_dist)
-            isolated_image2 = isolatePlate(image2, contour_thresh=contour_thresh, num_windows = num_windows,
-                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                     window_dist=points_dist)
-            isolated_image3 = isolatePlate(image3, contour_thresh=contour_thresh, num_windows = num_windows,
-                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                     window_dist=points_dist)
-            isolated_image4 = isolatePlate(image4, contour_thresh=contour_thresh, num_windows = num_windows,
-                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                     window_dist=points_dist)
-            isolated_image5 = isolatePlate(image5, contour_thresh=contour_thresh, num_windows = num_windows,
-                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                     window_dist=points_dist)
-            cv2.imshow('Image 1', isolated_image1)
-            cv2.imshow('Image 2', isolated_image2)
-            cv2.imshow('Image 3', isolated_image3)
-            cv2.imshow('Image 4', isolated_image4)
-            cv2.imshow('Image 5', isolated_image5)
+            for i, image in enumerate(images):
+                isolated_image, size_maximal_clique = isolatePlate(image, contour_thresh=contour_thresh, num_windows = num_windows,
+                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                         window_dist=points_dist)
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                cv2.putText(isolated_image,str(size_maximal_clique),(10,40), font, 1,(0,255,255),2)
+                cv2.imshow('Image ' + str(i), isolated_image)
         except Exception as e:
             print e
             
         
-        cv2.waitKey(1)
+        cv2.waitKey(2000)
         last_num_windows = num_windows
         last_canny_thresh1 = canny_thresh1
         last_canny_thresh2 = canny_thresh2
@@ -263,7 +254,7 @@ def run():
 
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
-        isolated_image = isolatePlate(image, contour_thresh=0.5, num_windows=20)
+        isolated_image, size_maximal_clique = isolatePlate(image, contour_thresh=0.5, num_windows=20)
         # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         # concated_images = np.concatenate((gray_image, isolated_image), axis=1)
         # cv2.imshow('Image ', isolated_image)
