@@ -13,7 +13,7 @@ from CliqueFinder import findMaximalClique
 
 
 # @profile
-def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, contour_thresh=0.5, num_windows=20, window_dist=0):
+def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, contour_thresh=0.5, num_windows=22, window_dist=0):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
         http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
@@ -54,8 +54,12 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, contour_thresh=0.5,
         sorted_args = np.argsort(window_xs)
         window_xs = window_xs[sorted_args]
         window_ys = window_ys[sorted_args]
-        image_with_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 9)
-    return image_with_ellipse, size_maximal_clique
+        best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 9)
+        if drew_elipse:
+            mask = np.zeros(edges.shape)
+            cv2.ellipse(mask, best_ellipse, (255, 255, 255), -1)
+            final_image = image * mask[..., np.newaxis]
+    return final_image, size_maximal_clique
 
 def drawEllipse(image, image_equalized, edges, window_xs, window_ys, min_clique_size):
     """ Draws the best ellipse through the given windows. 
@@ -130,10 +134,9 @@ def drawEllipse(image, image_equalized, edges, window_xs, window_ys, min_clique_
                     best_ellipse = ellipse_points
 
     if best_ellipse:
-        cv2.ellipse(final_image, best_ellipse, (255, 255, 255), 3)
         drew_elipse = True
 
-    return final_image, drew_elipse, size_maximal_clique
+    return best_ellipse, drew_elipse, size_maximal_clique
 
 def generateWindowCoords(edges, num_windows, min_dist=0):
     """ Generates random coordinates for the windows which
@@ -244,7 +247,8 @@ def run():
     image2 = cv2.imread('../images/Food_Plate_Captures/002.png', 1)
     image3 = cv2.imread('../images/Food_Plate_Captures/003.png', 1)
     image4 = cv2.imread('../images/Food_Plate_Captures/004.png', 1)
-    image5 = cv2.imread('../images/Food_Plate_Captures/005.png', 1)
+    image5 = cv2.cvtColor(cv2.imread('../images/Food_Plate_Captures/006.jpeg', 1), cv2.COLOR_BGR2RGB)
+    image5 = cv2.resize(image5, (400, 400)) 
 
     images = [image1, image2, image3, image4, image5]
 
@@ -254,10 +258,7 @@ def run():
 
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
-        isolated_image, size_maximal_clique = isolatePlate(image, contour_thresh=0.5, num_windows=20)
-        # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        # concated_images = np.concatenate((gray_image, isolated_image), axis=1)
-        # cv2.imshow('Image ', isolated_image)
+        isolated_image, size_maximal_clique = isolatePlate(image)
         
         fig.add_subplot(num_images, 2, 2*i+1)
         plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
@@ -275,6 +276,6 @@ def run():
 
 
 if __name__ == '__main__':
-    refineParams()
-    # run()
+    # refineParams()
+    run()
 
