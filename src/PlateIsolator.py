@@ -199,8 +199,8 @@ def refineParams():
     image2 = cv2.imread('../images/Food_Plate_Captures/002.png', 1)
     image3 = cv2.imread('../images/Food_Plate_Captures/003.png', 1)
     image4 = cv2.imread('../images/Food_Plate_Captures/004.png', 1)
-    image5 = cv2.imread('../images/Food_Plate_Captures/005.png', 1)
-
+    image5 = cv2.cvtColor(cv2.imread('../images/Food_Plate_Captures/006.jpeg', 1), cv2.COLOR_BGR2RGB)
+    image5 = cv2.resize(image5, (400, 400)) 
     images = [image1, image2, image3, image4, image5]
 
     last_num_windows = 0
@@ -230,7 +230,7 @@ def refineParams():
             print e
             
         
-        cv2.waitKey(2000)
+        cv2.waitKey(1)
         last_num_windows = num_windows
         last_canny_thresh1 = canny_thresh1
         last_canny_thresh2 = canny_thresh2
