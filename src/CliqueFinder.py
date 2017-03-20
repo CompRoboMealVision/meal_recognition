@@ -29,30 +29,18 @@ def findCliques(clique, candidates, excluded, g):
     """ Implementation of the Bron-Kerbosch Alogorithm."""
     if not any((candidates, excluded)):
         yield clique
-    pivot = pick_random(candidates) or pick_random(excluded)
-    for node in [n for n in candidates if n not in getNeighbors(pivot, g)]:
+    for node in candidates[:]:
         new_clique = clique + [node]
-        new_candidates = [v1 for v1 in candidates if v1 in getNeighbors(node, g)]
-        new_excluded = [v1 for v1 in excluded if v1 in getNeighbors(node, g)]
+        new_candidates = [v1 for v1 in candidates if v1 in numNeighbors(node, g)]
+        new_excluded = [v1 for v1 in excluded if v1 in numNeighbors(node, g)]
         for r in findCliques(new_clique, new_candidates, new_excluded, g):
             yield r
         candidates.remove(node)
         excluded.append(node)
 
-def getNeighbors(node, g):
-    """ Gets all neighbors of a given node in graph g."""
-    if node:
-        neighbors = [i for i, n_v in enumerate(g[node]) if n_v]
-        return neighbors
-    else:
-        return []
-
-def pick_random(s):
-    """ Get a random element from a list or set. """
-    if s:
-        elem = s.pop()
-        s.append(elem)
-        return elem
+def numNeighbors(node, g):
+    """ Determine number of neighbors of a given node in graph g."""
+    return [i for i, n_v in enumerate(g[node]) if n_v]
 
 if __name__ == '__main__':
     # dealing with a graph as list of lists 

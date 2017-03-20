@@ -213,33 +213,30 @@ def refineParams():
                         or canny_thresh2 != last_canny_thresh2
                         or points_dist != last_points_dist
                         or contour_thresh != last_contour_thresh)
-        if param_has_changed:
-            try:
+        try:
 
-                isolated_image1 = isolatePlate(image1, contour_thresh=contour_thresh, num_windows = num_windows,
-                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                         window_dist=points_dist)
-                isolated_image2 = isolatePlate(image2, contour_thresh=contour_thresh, num_windows = num_windows,
-                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                         window_dist=points_dist)
-                isolated_image3 = isolatePlate(image3, contour_thresh=contour_thresh, num_windows = num_windows,
-                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                         window_dist=points_dist)
-                isolated_image4 = isolatePlate(image4, contour_thresh=contour_thresh, num_windows = num_windows,
-                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                         window_dist=points_dist)
-                isolated_image5 = isolatePlate(image5, contour_thresh=contour_thresh, num_windows = num_windows,
-                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                         window_dist=points_dist)
-                cv2.imshow('Image 1', isolated_image1)
-                cv2.imshow('Image 2', isolated_image2)
-                cv2.imshow('Image 3', isolated_image3)
-                cv2.imshow('Image 4', isolated_image4)
-                cv2.imshow('Image 5', isolated_image5)
-            except Exception as e:
-                print e
-        # gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        # 
+            isolated_image1 = isolatePlate(image1, contour_thresh=contour_thresh, num_windows = num_windows,
+                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                     window_dist=points_dist)
+            isolated_image2 = isolatePlate(image2, contour_thresh=contour_thresh, num_windows = num_windows,
+                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                     window_dist=points_dist)
+            isolated_image3 = isolatePlate(image3, contour_thresh=contour_thresh, num_windows = num_windows,
+                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                     window_dist=points_dist)
+            isolated_image4 = isolatePlate(image4, contour_thresh=contour_thresh, num_windows = num_windows,
+                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                     window_dist=points_dist)
+            isolated_image5 = isolatePlate(image5, contour_thresh=contour_thresh, num_windows = num_windows,
+                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                     window_dist=points_dist)
+            cv2.imshow('Image 1', isolated_image1)
+            cv2.imshow('Image 2', isolated_image2)
+            cv2.imshow('Image 3', isolated_image3)
+            cv2.imshow('Image 4', isolated_image4)
+            cv2.imshow('Image 5', isolated_image5)
+        except Exception as e:
+            print e
             
         
         cv2.waitKey(1)
