@@ -55,10 +55,13 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, contour_thresh=0.5,
         window_xs = window_xs[sorted_args]
         window_ys = window_ys[sorted_args]
         best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 9)
-        if drew_elipse:
-            mask = np.zeros(edges.shape)
-            cv2.ellipse(mask, best_ellipse, (255, 255, 255), -1)
-            final_image = image * mask[..., np.newaxis]
+
+    mask = np.zeros(edges.shape)
+    cv2.ellipse(mask, best_ellipse, (255, 255, 255), -1)
+    final_image = np.copy(image)
+    # import pdb; pdb.set_trace()
+    final_image[mask[..., np.newaxis].repeat(3, 2) == 0] = 0
+
     return final_image, size_maximal_clique
 
 def drawEllipse(image, image_equalized, edges, window_xs, window_ys, min_clique_size):
@@ -259,7 +262,7 @@ def run():
     for i, image in enumerate(images):  
         # num_image = slider_window.number_contours
         isolated_image, size_maximal_clique = isolatePlate(image)
-        
+
         fig.add_subplot(num_images, 2, 2*i+1)
         plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         # plt.title('Original Image')
@@ -276,6 +279,6 @@ def run():
 
 
 if __name__ == '__main__':
-    # refineParams()
-    run()
+    refineParams()
+    # run()
 
