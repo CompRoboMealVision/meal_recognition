@@ -3,7 +3,6 @@
 """ This script detects plates in an image and isolates 
     just the plate and the food on it. """
 
-
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
@@ -103,7 +102,7 @@ def drawEllipse(image, image_equalized, edges, window_xs, window_ys, min_clique_
     # that fall on the same ellipse.
     # This is the same problem as finding the biggest clique
     # in an undirected graph.
-    groups = findMaximalClique(connections.tolist())
+    groups = findMaximalClique(connections)
 
     size_maximal_clique = len(groups[0])
 
