@@ -10,11 +10,11 @@ class SliderWindow(object):
         self.window_name = 'threshold_image'
 
         cv2.namedWindow(self.window_name)
-        self.num_windows = 22
-        self.canny_thresh1 = 48
-        self.canny_thresh2 = 202
-        self.points_dist = 1
-        self.contour_thresh = 0.59
+        self.num_windows = 32
+        self.canny_thresh1 = 52
+        self.canny_thresh2 = 184
+        self.points_dist = 0
+        self.contour_thresh = 0.36
 
         cv2.createTrackbar('Number of windows', self.window_name, self.num_windows, 80, self.set_num_windows)
         cv2.createTrackbar('Canny Threshold 1', self.window_name, self.canny_thresh1, 255, self.set_thresh1)

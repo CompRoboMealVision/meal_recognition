@@ -13,7 +13,7 @@ from CliqueFinder import findMaximalClique
 
 
 # @profile
-def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, contour_thresh=0.5, num_windows=22, window_dist=0):
+def isolatePlate(image, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36, num_windows=32, window_dist=0):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
         http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
@@ -54,13 +54,13 @@ def isolatePlate(image, canny_thresh1=50, canny_thresh2=200, contour_thresh=0.5,
         sorted_args = np.argsort(window_xs)
         window_xs = window_xs[sorted_args]
         window_ys = window_ys[sorted_args]
-        best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 9)
+        best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 10)
 
     mask = np.zeros(edges.shape)
     cv2.ellipse(mask, best_ellipse, (255, 255, 255), -1)
     final_image = np.copy(image)
-    # import pdb; pdb.set_trace()
     final_image[mask[..., np.newaxis].repeat(3, 2) == 0] = 0
+    # cv2.ellipse(contour_image, best_ellipse, (255, 255, 255), 2)
 
     return final_image, size_maximal_clique
 
