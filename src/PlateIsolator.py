@@ -12,7 +12,7 @@ from CliqueFinder import findMaximalClique
 
 
 # @profile
-def isolatePlate(image, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36, num_windows=32, window_dist=0):
+def isolatePlate(image, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36, num_windows=32, window_dist=0, overlap_thresh=0.90):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
         http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
@@ -44,19 +44,48 @@ def isolatePlate(image, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36
     for contour in big_contours:
         cv2.drawContours(contour_image, contour, -1, (255, 0, 0), 1)
 
-    drew_elipse = False
     # Sometimes drawEllipse doesn't draw an ellipse.
     # We iterate until it does.
-    while not drew_elipse:
-        # Draw windows around random points
-        window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=window_dist)
-        sorted_args = np.argsort(window_xs)
-        window_xs = window_xs[sorted_args]
-        window_ys = window_ys[sorted_args]
-        best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 10)
+    matches = []
+    masks = []
+    done_drawing = False
+    while not done_drawing:
+        print matches
+        drew_elipse = False
+        while not drew_elipse:
+            # Draw windows around random points
+            window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=window_dist)
+            sorted_args = np.argsort(window_xs)
+            window_xs = window_xs[sorted_args]
+            window_ys = window_ys[sorted_args]
+            best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 1)
+        mask1 = np.zeros(edges.shape)
+        cv2.ellipse(mask1, best_ellipse, (255, 255, 255), -1)
+        if len(masks) == 0:
+            # print 'Adding initial item'
+            masks.append(mask1)
+            matches.append(1)
+        else:
+            was_close_to_prev_mask = False
+            for i, mask2 in enumerate(masks):
+                intersection = np.logical_and(mask1, mask2)
+                union = np.logical_or(mask1, mask2)
+                # force float division
+                area_ratio = np.sum(intersection)/float(np.sum(union))
+                print area_ratio
+                if area_ratio > overlap_thresh:
+                    matches[i] = matches[i] + 1
+                    was_close_to_prev_mask = True
+            if not was_close_to_prev_mask:
+                masks.append(mask1)
+                matches.append(1)
+        if len(matches) > 0:
+            done_drawing = max(matches) > 3
 
-    mask = np.zeros(edges.shape)
-    cv2.ellipse(mask, best_ellipse, (255, 255, 255), -1)
+
+    mask = masks[np.argmax(matches)]
+    print 'Max item is...' + str(np.argmax(np.array(matches)))
+
     final_image = np.copy(image)
     final_image[mask[..., np.newaxis].repeat(3, 2) == 0] = 0
     # cv2.ellipse(contour_image, best_ellipse, (255, 255, 255), 2)
@@ -223,17 +252,14 @@ def refineParams():
                         or canny_thresh2 != last_canny_thresh2
                         or points_dist != last_points_dist
                         or contour_thresh != last_contour_thresh)
-        try:
-            for i, image in enumerate(images):
-                isolated_image, size_maximal_clique = isolatePlate(image, contour_thresh=contour_thresh, num_windows = num_windows,
-                                         canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
-                                         window_dist=points_dist)
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(isolated_image,str(size_maximal_clique),(10,40), font, 1,(0,255,255),2)
-                cv2.imshow('Image ' + str(i), isolated_image)
-        except Exception as e:
-            print e
-            
+        for i, image in enumerate(images):
+            isolated_image, size_maximal_clique = isolatePlate(image, contour_thresh=contour_thresh, num_windows = num_windows,
+                                     canny_thresh1=canny_thresh1, canny_thresh2=canny_thresh2,
+                                     window_dist=points_dist)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(isolated_image,str(size_maximal_clique),(10,40), font, 1,(0,255,255),2)
+            cv2.imshow('Image ' + str(i), isolated_image)
+        
         
         cv2.waitKey(1)
         last_num_windows = num_windows
