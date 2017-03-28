@@ -12,7 +12,11 @@ from CliqueFinder import findMaximalClique
 
 
 # @profile
-def isolatePlate(image, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36, num_windows=32, window_dist=0, overlap_thresh=0.90):
+
+def isolatePlateWithTolerance(isolatePlate, tolerance):
+    isolated
+
+def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36, num_windows=32, window_dist=0, overlap_thresh=0.90):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
         http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
@@ -51,6 +55,7 @@ def isolatePlate(image, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36
     # We iterate until it does.
     matches = []
     masks = []
+    ellipses = []
     done_drawing = False
     while not done_drawing:
         print matches
@@ -67,6 +72,7 @@ def isolatePlate(image, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36
         if len(masks) == 0:
             # print 'Adding initial item'
             masks.append(mask1)
+            ellipses.append(best_ellipse)
             matches.append(1)
         else:
             was_close_to_prev_mask = False
@@ -81,14 +87,19 @@ def isolatePlate(image, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36
                     was_close_to_prev_mask = True
             if not was_close_to_prev_mask:
                 masks.append(mask1)
+                ellipses.append(best_ellipse)
                 matches.append(1)
         if len(matches) > 0:
             done_drawing = max(matches) > 3
 
 
-    mask = masks[np.argmax(matches)]
+    ellipse = ellipses[np.argmax(matches)]
     print 'Max item is...' + str(np.argmax(np.array(matches)))
-
+    new_width = ellipse[1][0] * expansionFactor
+    new_height = ellipse[1][1]
+    expanded_ellipse = (ellipse[0], (new_width, new_height), ellipse[2])
+    mask = np.zeros(edges.shape)
+    cv2.ellipse(mask, expanded_ellipse, (255, 255, 255), -1)
     final_image = np.copy(image)
     final_image[mask[..., np.newaxis].repeat(3, 2) == 0] = 0
     # cv2.ellipse(contour_image, best_ellipse, (255, 255, 255), 2)

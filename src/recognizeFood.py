@@ -16,8 +16,7 @@ if __name__ == '__main__':
     
     image_path = sys.argv[1]
     original_image = cv2.imread(image_path, 1)
-    isolated_image, _ = isolatePlate(original_image)
-
+    isolated_image, _ = isolatePlate(original_image, expansionFactor = 2)
     file_name, file_extension = os.path.splitext(image_path)
     temp_file_name = file_name + '_temp' + file_extension
 
