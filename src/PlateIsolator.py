@@ -24,7 +24,10 @@ def isolatePlate(image, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36
     edges = cv2.Canny(image_equalized, canny_thresh1, canny_thresh2)
     kernel = np.ones((3,3),np.uint8)
 
-    contours, hierarchy = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    try:
+        _, contours, _ = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    except:
+        print 'You are using Opencv2. use opencv3'
      # Split the contours up, in order to break erroneous connections
     split_contours = splitContours(contours)
 
@@ -304,6 +307,6 @@ def run():
 
 
 if __name__ == '__main__':
-    refineParams()
-    # run()
+    # refineParams()
+    run()
 
