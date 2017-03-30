@@ -11,14 +11,13 @@ import cv2
 import os
 import matplotlib.pyplot as plt
 
-if __name__ == '__main__':
-    
+def run(folder):
+
     crops_right = 0
     crops_wrong = 0
     full_right = 0
     full_wrong = 0
 
-    folder = sys.argv[1]
     for file_name in os.listdir(folder):
         if '_test' in file_name:
             os.remove(temp_file_name)
@@ -56,3 +55,6 @@ if __name__ == '__main__':
             print('Cropped Image: %.5f)' % (crops_right/float(crops_wrong + crops_right)))
             print('Full Image: %.5f)' % (full_right/float(full_wrong + full_right)))
 
+if __name__ == '__main__':
+    folder = sys.argv[1]
+    run(folder)

@@ -12,31 +12,6 @@ from CliqueFinder import findMaximalClique
 import imutils
 
 # @profile
-def processContours(contours, contour_thresh, image_size):
-    """process the contours of an image."""
-
-     # Split the contours up, in order to break erroneous connections
-    split_contours = splitContours(contours)
-
-    # Sort the contours according to their length
-    sorted_data = sorted(split_contours, key=lambda curve: cv2.arcLength(curve, closed=False), reverse=True)
-
-    # Create an image with only the longest contours
-    longest_contour = cv2.arcLength(sorted_data[0], closed=False)
-    # Create a list with all contours up to a certain threshold of the longest
-    
-    big_contours = []
-    for contour in sorted_data:
-        if cv2.arcLength(contour, closed=False) >= contour_thresh*longest_contour:
-            big_contours.append(contour)
-
-    contour_image = np.zeros(image_size)
-    # NOTE: Still unsure why drawing all contors simultaneously results in bad lines.
-    for contour in big_contours:
-        cv2.drawContours(contour_image, contour, -1, (255, 0, 0), 1)
-
-    return contour_image
-
 def isolatePlate(image, expansionFactor=1.0, contour_thresh=0.36, num_windows=32, overlap_thresh=0.90, retries=5, num_overlaps=3):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
@@ -66,22 +41,15 @@ def isolatePlate(image, expansionFactor=1.0, contour_thresh=0.36, num_windows=32
     done_drawing = False
     while not done_drawing:
         # print matches
-        drew_elipse = False
-        i = 0
-        while not drew_elipse:
-            # Draw windows around random points
-            window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=0)
-            sorted_args = np.argsort(window_xs)
-            window_xs = window_xs[sorted_args]
-            window_ys = window_ys[sorted_args]
-            best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image_equalized, edges, window_xs, window_ys, 1)
-            i = i + 1
-            # quit after i tries
-            if i > retries:
-                print 'retries capped'
-                return image, size_maximal_clique
 
-
+        try:
+            best_ellipse, size_maximal_clique = getEllipse(retries, 
+                    lambda: generateWindowCoords(contour_image, num_windows, min_dist=0),
+                    lambda xs, ys: drawEllipse(image_equalized, edges, xs, ys, 1)
+            )
+        except Exception as e:
+            print e
+            return image, 0
         mask1 = np.zeros(image.shape)
         cv2.ellipse(mask1, best_ellipse, (255, 255, 255), -1)
         if len(masks) == 0:
@@ -124,6 +92,49 @@ def isolatePlate(image, expansionFactor=1.0, contour_thresh=0.36, num_windows=32
     final_image[mask == 0] = 0
 
     return final_image, size_maximal_clique
+
+def getEllipse(retries, generateWindowCoords, drawEllipse):
+    """Calls drawEllipse until it gets an ellipse, or we exceed max amount of retries."""
+    drew_ellipse = False
+    i = 0
+    while not drew_ellipse:
+        # Draw windows around random points
+        window_xs, window_ys = generateWindowCoords()
+        sorted_args = np.argsort(window_xs)
+        window_xs = window_xs[sorted_args]
+        window_ys = window_ys[sorted_args]
+        best_ellipse, drew_ellipse, size_maximal_clique = drawEllipse(window_xs, window_ys)
+        i = i + 1
+        # quit after i tries
+        if i > retries:
+            raise Exception('Exceeded ' + str(i) + ' retries.')
+    return best_ellipse, size_maximal_clique
+
+
+def processContours(contours, contour_thresh, image_size):
+    """process the contours of an image."""
+
+     # Split the contours up, in order to break erroneous connections
+    split_contours = splitContours(contours)
+
+    # Sort the contours according to their length
+    sorted_data = sorted(split_contours, key=lambda curve: cv2.arcLength(curve, closed=False), reverse=True)
+
+    # Create an image with only the longest contours
+    longest_contour = cv2.arcLength(sorted_data[0], closed=False)
+    # Create a list with all contours up to a certain threshold of the longest
+    
+    big_contours = []
+    for contour in sorted_data:
+        if cv2.arcLength(contour, closed=False) >= contour_thresh*longest_contour:
+            big_contours.append(contour)
+
+    contour_image = np.zeros(image_size)
+    # NOTE: Still unsure why drawing all contors simultaneously results in bad lines.
+    for contour in big_contours:
+        cv2.drawContours(contour_image, contour, -1, (255, 0, 0), 1)
+
+    return contour_image
 
 def drawEllipse(image_equalized, edges, window_xs, window_ys, min_clique_size):
     """ Draws the best ellipse through the given windows. 
