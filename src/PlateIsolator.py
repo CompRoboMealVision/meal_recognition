@@ -12,23 +12,9 @@ from CliqueFinder import findMaximalClique
 import imutils
 
 # @profile
-def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36, num_windows=32, window_dist=0, overlap_thresh=0.90, retries=5):
-    """ Isolate a food plate from an image with extra data.
-        Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
-        http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
-    # Convert to greyscale
-    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # Equalize the contrast
-    image_equalized = cv2.equalizeHist(image_gray)
-    # Get edges using canny edge detection. Params not tuned.
-    edges = cv2.Canny(image_equalized, canny_thresh1, canny_thresh2)
-    kernel = np.ones((3,3),np.uint8)
-    if imutils.is_cv2():
-        contours, _ = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    elif imutils.is_cv3():
-        _, contours, _ = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    else:
-        raise ImportError('Using a cv2 version that is not supported.')
+def processContours(contours, contour_thresh, image_size):
+    """process the contours of an image."""
+
      # Split the contours up, in order to break erroneous connections
     split_contours = splitContours(contours)
 
@@ -38,16 +24,40 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
     # Create an image with only the longest contours
     longest_contour = cv2.arcLength(sorted_data[0], closed=False)
     # Create a list with all contours up to a certain threshold of the longest
+    
     big_contours = []
     for contour in sorted_data:
         if cv2.arcLength(contour, closed=False) >= contour_thresh*longest_contour:
             big_contours.append(contour)
 
-    contour_image = np.zeros(edges.shape)
+    contour_image = np.zeros(image_size)
     # NOTE: Still unsure why drawing all contors simultaneously results in bad lines.
     for contour in big_contours:
         cv2.drawContours(contour_image, contour, -1, (255, 0, 0), 1)
 
+    return contour_image
+
+def isolatePlate(image, expansionFactor=1.0, contour_thresh=0.36, num_windows=32, overlap_thresh=0.90, retries=5, num_overlaps=3):
+    """ Isolate a food plate from an image with extra data.
+        Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
+        http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
+    
+    # Convert to greyscale
+    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Equalize the contrast
+    image_equalized = cv2.equalizeHist(image_gray)
+
+    # Get edges using canny edge detection. Params not tuned.
+    edges = cv2.Canny(image_equalized, 52, 184)
+
+    if imutils.is_cv2():
+        contours, _ = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    elif imutils.is_cv3():
+        _, contours, _ = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    else:
+        raise ImportError('Using a cv2 version that is not supported.')
+
+    contour_image = processContours(contours, contour_thresh, image_gray.shape)
     # Sometimes drawEllipse doesn't draw an ellipse.
     # We iterate until it does.
     matches = []
@@ -58,9 +68,9 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
         # print matches
         drew_elipse = False
         i = 0
-        while (not drew_elipse):
+        while not drew_elipse:
             # Draw windows around random points
-            window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=window_dist)
+            window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=0)
             sorted_args = np.argsort(window_xs)
             window_xs = window_xs[sorted_args]
             window_ys = window_ys[sorted_args]
@@ -72,7 +82,7 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
                 return image, size_maximal_clique
 
 
-        mask1 = np.zeros(edges.shape)
+        mask1 = np.zeros(image.shape)
         cv2.ellipse(mask1, best_ellipse, (255, 255, 255), -1)
         if len(masks) == 0:
             # print 'Adding initial item'
@@ -94,7 +104,7 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
                 masks.append(mask1)
                 ellipses.append(best_ellipse)
                 matches.append(1)
-        if len(matches) > 0:
+        if len(matches) > num_overlaps:
             done_drawing = max(matches) > 0
         max_iterations = 30
         if sum(matches) > 30:
@@ -107,11 +117,11 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
     new_width = ellipse[1][0] * expansionFactor
     new_height = ellipse[1][1]
     expanded_ellipse = (ellipse[0], (new_width, new_height), ellipse[2])
-    mask = np.zeros(edges.shape)
+    mask = np.zeros(image.shape)
     cv2.ellipse(mask, expanded_ellipse, (255, 255, 255), -1)
     final_image = np.copy(image)
-    final_image[mask[..., np.newaxis].repeat(3, 2) == 0] = 0
-    # cv2.ellipse(contour_image, best_ellipse, (255, 255, 255), 2)
+    # final_image[mask[..., np.newaxis].repeat(3, 2) == 0] = 0
+    final_image[mask == 0] = 0
 
     return final_image, size_maximal_clique
 
