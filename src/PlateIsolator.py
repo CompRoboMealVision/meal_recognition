@@ -74,7 +74,7 @@ def isolatePlate(image, expansionFactor=1.0, contour_thresh=0.36, num_windows=32
             sorted_args = np.argsort(window_xs)
             window_xs = window_xs[sorted_args]
             window_ys = window_ys[sorted_args]
-            best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 1)
+            best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image_equalized, edges, window_xs, window_ys, 1)
             i = i + 1
             # quit after i tries
             if i > retries:
@@ -107,7 +107,7 @@ def isolatePlate(image, expansionFactor=1.0, contour_thresh=0.36, num_windows=32
         if len(matches) > num_overlaps:
             done_drawing = max(matches) > 0
         max_iterations = 30
-        if sum(matches) > 30:
+        if sum(matches) > 40:
             print 'Iterations capped'
             return image, size_maximal_clique
 
@@ -125,18 +125,14 @@ def isolatePlate(image, expansionFactor=1.0, contour_thresh=0.36, num_windows=32
 
     return final_image, size_maximal_clique
 
-def drawEllipse(image, image_equalized, edges, window_xs, window_ys, min_clique_size):
+def drawEllipse(image_equalized, edges, window_xs, window_ys, min_clique_size):
     """ Draws the best ellipse through the given windows. 
         Returns: image_with_ellipse, an image with an ellipse drawn on it
                  drew_elipse, indicates whether an ellipse was drawn successfully
                  size_maximal_clique, the size of the biggest clique."""
     
-    
-    image_with_windows = drawWindows(image, window_xs, window_ys)
-
     gx = cv2.Sobel(image_equalized, cv2.CV_64F,1,0,ksize=5)
     gy = cv2.Sobel(image_equalized, cv2.CV_64F,0,1,ksize=5)
-    final_image = drawNormals(image_with_windows, window_xs, window_ys, gx, gy)
 
     # C is a conjunction matrix where
     # A_i = the region bounded by the tangent at point i
@@ -175,9 +171,6 @@ def drawEllipse(image, image_equalized, edges, window_xs, window_ys, min_clique_
         
         for group in groups:
 
-        # Plot the points that are our best guesses for the ellipse
-        # for i in group:
-        #     cv2.circle(final_image, (window_xs[i], window_ys[i]), 3, (255, 255, 0), 3)
             group_xs = window_xs[group]
             group_ys = window_ys[group]
             # cv2.fitEllipse wants a 2xn numpy array
