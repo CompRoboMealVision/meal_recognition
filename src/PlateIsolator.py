@@ -12,11 +12,7 @@ from CliqueFinder import findMaximalClique
 
 
 # @profile
-
-def isolatePlateWithTolerance(isolatePlate, tolerance):
-    isolated
-
-def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36, num_windows=32, window_dist=0, overlap_thresh=0.90):
+def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36, num_windows=32, window_dist=0, overlap_thresh=0.90, retries=5):
     """ Isolate a food plate from an image with extra data.
         Approach taken from Hsin-Chen Chen et al 2015 Meas. Sci. Technol. 26 025702
         http://iopscience.iop.org/article/10.1088/0957-0233/26/2/025702/pdf. """
@@ -27,7 +23,6 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
     # Get edges using canny edge detection. Params not tuned.
     edges = cv2.Canny(image_equalized, canny_thresh1, canny_thresh2)
     kernel = np.ones((3,3),np.uint8)
-
     try:
         _, contours, _ = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     except:
@@ -58,15 +53,23 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
     ellipses = []
     done_drawing = False
     while not done_drawing:
-        print matches
+        # print matches
         drew_elipse = False
-        while not drew_elipse:
+        i = 0
+        while (not drew_elipse):
             # Draw windows around random points
             window_xs, window_ys = generateWindowCoords(contour_image, num_windows, min_dist=window_dist)
             sorted_args = np.argsort(window_xs)
             window_xs = window_xs[sorted_args]
             window_ys = window_ys[sorted_args]
             best_ellipse, drew_elipse, size_maximal_clique = drawEllipse(image, image_equalized, edges, window_xs, window_ys, 1)
+            i = i + 1
+            # quit after i tries
+            if i > retries:
+                print 'retries capped'
+                return image, size_maximal_clique
+
+
         mask1 = np.zeros(edges.shape)
         cv2.ellipse(mask1, best_ellipse, (255, 255, 255), -1)
         if len(masks) == 0:
@@ -81,7 +84,7 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
                 union = np.logical_or(mask1, mask2)
                 # force float division
                 area_ratio = np.sum(intersection)/float(np.sum(union))
-                print area_ratio
+                # print area_ratio
                 if area_ratio > overlap_thresh:
                     matches[i] = matches[i] + 1
                     was_close_to_prev_mask = True
@@ -90,11 +93,15 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
                 ellipses.append(best_ellipse)
                 matches.append(1)
         if len(matches) > 0:
-            done_drawing = max(matches) > 3
+            done_drawing = max(matches) > 0
+        max_iterations = 30
+        if sum(matches) > 30:
+            print 'Iterations capped'
+            return image, size_maximal_clique
 
-
+    # print 'Iterations: ' + str(sum(matches))
     ellipse = ellipses[np.argmax(matches)]
-    print 'Max item is...' + str(np.argmax(np.array(matches)))
+    # print 'Max item is...' + str(np.argmax(np.array(matches)))
     new_width = ellipse[1][0] * expansionFactor
     new_height = ellipse[1][1]
     expanded_ellipse = (ellipse[0], (new_width, new_height), ellipse[2])
