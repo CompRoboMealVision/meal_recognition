@@ -9,7 +9,7 @@ import numpy as np
 from SliderWindow import SliderWindow
 from ContourSplitter import splitContours
 from CliqueFinder import findMaximalClique
-
+import imutils
 
 # @profile
 def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=184, contour_thresh=0.36, num_windows=32, window_dist=0, overlap_thresh=0.90, retries=5):
@@ -23,10 +23,12 @@ def isolatePlate(image, expansionFactor = 1.0, canny_thresh1=52, canny_thresh2=1
     # Get edges using canny edge detection. Params not tuned.
     edges = cv2.Canny(image_equalized, canny_thresh1, canny_thresh2)
     kernel = np.ones((3,3),np.uint8)
-    try:
+    if imutils.is_cv2():
+        contours, _ = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    elif imutils.is_cv3():
         _, contours, _ = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    except:
-        print 'You are using Opencv2. use opencv3'
+    else:
+        raise ImportError('Using a cv2 version that is not supported.')
      # Split the contours up, in order to break erroneous connections
     split_contours = splitContours(contours)
 
