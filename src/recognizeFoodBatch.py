@@ -17,13 +17,13 @@ def run(folder):
     crops_wrong = 0
     full_right = 0
     full_wrong = 0
-
-    for file_name in os.listdir(folder):
+    human_strings = setup()
+    for i, file_name in enumerate(os.listdir(folder)):
         if '_test' in file_name:
             os.remove(temp_file_name)
         else:
             # Setup the neural net
-            human_strings = setup()
+            
             full_name = os.path.join(folder,file_name)
             print full_name
             original_image = cv2.imread(full_name, 1)
@@ -31,8 +31,7 @@ def run(folder):
                 original_image = cv2.resize(original_image, (400, 400))
             except:
                 pass
-            isolated_image, _ = isolatePlate(original_image, expansionFactor = 2, overlap_thresh=0.5)
-
+            isolated_image, _ = isolatePlate(original_image, expansionFactor = 2, overlap_thresh=0.85)
             name, extension = os.path.splitext(full_name)
             temp_file_name = name + '_temp' + extension
 
@@ -54,6 +53,7 @@ def run(folder):
 
             print('Cropped Image: %.5f)' % (crops_right/float(crops_wrong + crops_right)))
             print('Full Image: %.5f)' % (full_right/float(full_wrong + full_right)))
+            print i
 
 if __name__ == '__main__':
     folder = sys.argv[1]
