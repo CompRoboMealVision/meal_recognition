@@ -4,7 +4,6 @@
 
 from PlateIsolator import isolatePlate
 import sys
-sys.path.insert(0, '../../dcnns/testing')
 from label_image import label_image, setup
 from label_image_hist import plot_bar_graph
 import cv2
