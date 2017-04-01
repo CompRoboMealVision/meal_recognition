@@ -20,12 +20,12 @@ def initialize():
         if not os.path.exists(user_input):
             print "The following is not a valid path: " + str(user_input)
             # Retry
-            query_model_path()
+            initialize()
         elif os.path.isfile(user_input):
             print "The following is not a valid directory path: " + str(user_input)
             print "Please point to a directory, not a file."
             # Retry
-            query_model_path()
+            initialize()
         elif os.path.isdir(user_input):
             path = user_input
             # Check for the two necessary files
