@@ -3,20 +3,18 @@
 # Derived from https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#4
 
 import tensorflow as tf, sys
+import ModelPath
 
 def setup():
     # Loads label file, strips off carriage return
-    try:
-        label_lines = [line.rstrip() for line
-                           in tf.gfile.GFile("/home/jspear/Documents/dcnns/models/food_101_v4/retrained_labels.txt")]
-    except:
-        print 'ERROR: must execute from the dcnns folder'
-    else:
-        # Unpersists graph from file
-        with tf.gfile.FastGFile("/home/jspear/Documents/dcnns/models/food_101_v4/retrained_graph.pb", 'rb') as f:
-            graph_def = tf.GraphDef()
-            graph_def.ParseFromString(f.read())
-            _ = tf.import_graph_def(graph_def, name='')
+    ModelPath.initialize()
+    label_lines = [line.rstrip() for line
+                       in tf.gfile.GFile(ModelPath.retrained_labels())]
+    # Unpersists graph from file
+    with tf.gfile.FastGFile(ModelPath.retrained_graph()) as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+        _ = tf.import_graph_def(graph_def, name='')
     return label_lines
 
 def label_image(image_path, labels):
