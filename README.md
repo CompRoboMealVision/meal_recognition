@@ -52,20 +52,20 @@ We chose Inception over other models because of it’s good documentation and tu
 ### Analysis
 Successfully training a model requires understanding on the results output from the training and evaluation process. These are a few concepts we need to understand to evaluate the quality of a network.
 
-*Accuracy
+* Accuracy
 The accuracy is the percentage of the images in a batch that were labeled with the correct class.
 *Cross-validation
 Normally in machine learning a set of data is divided into 2 batches, one for training and one for testing. Cross-validation means using rounds of different partitions of training and testing sets and then averaging the accuracy value across the rounds.  
-*Loss
+* Loss
 The loss function is error function that depends on each weight between each layer of the network.  The error is a quantitative measure of how much the predicted label differ from the actual label. Training the model involves minimizing the loss function.
 
-*Cross-entropy
+* Cross-entropy
 Cross-entropy is a loss function that gives a glimpse into how well the learning process is progressing. More specifically, it is measured as the distance between two probability vectors, namely, the predicted probability vector and the label vector. A lower cross entropy is better.
-Precision
+* Precision
 In machine learning, precision is the ratio of true positives to all identified positives (sum of true positives and false positives). It measures how many items selected are actually relevant. For example, if our model identified 8 images as strawberry shortcake but 3 of them are actually apple pie, the precision would be ⅝. Precision measures how useful the prediction is. 
-*Recall
+* Recall
 Recall is the ratio of true positives to all actual positives. It measures what fraction of relevant images are selected and how complete the prediction is. 
-*Sparsity
+* Sparsity
 Sparsity occurs when among all the coefficients in a model, only a few are non-zero. This improves performance, as not all nodes need to be activated to produce a good result.
 
 Luckily, the Google team also built Tensorboard, and web tool that visualizes data output from a Tensorflow session. These are seen in the following selected versions trained of Food 101.
@@ -110,14 +110,14 @@ Another big learning comes from utilizing existing code and a jumping-off point 
 
 ## Future work
 
-*There were several directions which we researched/attempted that did not make the scope of our project because of debugging and training work. Given additional time, we would love to complete these:
+* There were several directions which we researched/attempted that did not make the scope of our project because of debugging and training work. Given additional time, we would love to complete these:
 
-*T-SNE visualizations. Analogous to PCAs as a way to represent multidimensional data in lower dimension space, this technique would visually enhance the results of our models. Based on some articles, it seems that T-SNE performs better than PCA at revealing clusters. We couldn’t complete this because batch running our model was problematic, and this visualization could not directly improve our model. However, it would definitely make fine-tuning more understandable, as our fine-tuned model’s results definitely underperformed our understanding of the quantitative results.
+* T-SNE visualizations. Analogous to PCAs as a way to represent multidimensional data in lower dimension space, this technique would visually enhance the results of our models. Based on some articles, it seems that T-SNE performs better than PCA at revealing clusters. We couldn’t complete this because batch running our model was problematic, and this visualization could not directly improve our model. However, it would definitely make fine-tuning more understandable, as our fine-tuned model’s results definitely underperformed our understanding of the quantitative results.
 
-*Spatial transformer networks. Additional ways for us to pre-process the input data is to train another network that normalizes our images for us. Spatial transformer networks can make the input more spatially invariant, which should make the whole network simpler to train.
+* Spatial transformer networks. Additional ways for us to pre-process the input data is to train another network that normalizes our images for us. Spatial transformer networks can make the input more spatially invariant, which should make the whole network simpler to train.
 
-*Retraining deeper layers without fine-tuning the whole model. Through learning deeper about SLIM, Google’s library for implementing DCNNs like Inception, we may be able to point to a deeper layer, set up a new bottleneck, and train the remaining Inception Module (mixed) layers. In the tutorial code, additional nodes were introduced that made this process seem pretty daunting. We were not able to figure it out, but this could be even more promising than fine-tuning.
+* Retraining deeper layers without fine-tuning the whole model. Through learning deeper about SLIM, Google’s library for implementing DCNNs like Inception, we may be able to point to a deeper layer, set up a new bottleneck, and train the remaining Inception Module (mixed) layers. In the tutorial code, additional nodes were introduced that made this process seem pretty daunting. We were not able to figure it out, but this could be even more promising than fine-tuning.
 
-*Implement image segmentation to separate different foods. Oval detection has helped identify plates, and additional preprocessing may separate different food items before sending them into the model.
+* Implement image segmentation to separate different foods. Oval detection has helped identify plates, and additional preprocessing may separate different food items before sending them into the model.
 
 
