@@ -3,11 +3,16 @@ Judy Xu, David Zhu, and Jonah Spear
 Comp Robo 2017
 
 ## Overview
-The goal of this project was to programatically label food images. Although this task is relatively easy for humans, is difficult for machines. Recognizing foods in an image is the first step towards developing an algorithm to count calories, which would  be useful for diabetics and people looking to develop healthy eating habits. Our pipeline worked as follows:
+The goal of this project was to programatically label food images. Although this task is relatively easy for humans, is difficult for machines. Recognizing foods in an image is the first step towards developing an algorithm to count calories, which would be useful for diabetics and people looking to develop healthy eating habits. Our pipeline worked as follows:
+
+![flow pipeline](https://github.com/CompRoboMealVision/meal_recognition/blob/master/resources/pipeline.png)
+
+For example, given an image of icecream, it outputs the probablity of the top five classes. 
+![ginger icecream](https://github.com/CompRoboMealVision/meal_recognition/blob/master/resources/ginger_icecream_hist.png)
+In this case, it correctly identified it as icecream. 
 
 ## Plate Isolator. 
 The step in our data pipeline was to isolate just the food in an image with possibly many visual features. Inspired by [DeepFood](https://arxiv.org/abs/1606.05675), where they manually drew a bounding box for increased performance. Our method crops the image automatically by leveraging a common trait in many food images - that the food is on an ellipsoid or circular plate. We implemented the method presented in [Nie et al 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3739713/). 
-
 
 Our method for plate isolation comprises of four main steps:
 Pre-process images and isolate the longest edges
@@ -47,20 +52,20 @@ We chose Inception over other models because of it’s good documentation and tu
 ### Analysis
 Successfully training a model requires understanding on the results output from the training and evaluation process. These are a few concepts we need to understand to evaluate the quality of a network.
 
-Accuracy
+*Accuracy
 The accuracy is the percentage of the images in a batch that were labeled with the correct class.
-Cross-validation
+*Cross-validation
 Normally in machine learning a set of data is divided into 2 batches, one for training and one for testing. Cross-validation means using rounds of different partitions of training and testing sets and then averaging the accuracy value across the rounds.  
-Loss
+*Loss
 The loss function is error function that depends on each weight between each layer of the network.  The error is a quantitative measure of how much the predicted label differ from the actual label. Training the model involves minimizing the loss function.
 
-Cross-entropy
+*Cross-entropy
 Cross-entropy is a loss function that gives a glimpse into how well the learning process is progressing. More specifically, it is measured as the distance between two probability vectors, namely, the predicted probability vector and the label vector. A lower cross entropy is better.
 Precision
 In machine learning, precision is the ratio of true positives to all identified positives (sum of true positives and false positives). It measures how many items selected are actually relevant. For example, if our model identified 8 images as strawberry shortcake but 3 of them are actually apple pie, the precision would be ⅝. Precision measures how useful the prediction is. 
-Recall
+*Recall
 Recall is the ratio of true positives to all actual positives. It measures what fraction of relevant images are selected and how complete the prediction is. 
-Sparsity
+*Sparsity
 Sparsity occurs when among all the coefficients in a model, only a few are non-zero. This improves performance, as not all nodes need to be activated to produce a good result.
 
 Luckily, the Google team also built Tensorboard, and web tool that visualizes data output from a Tensorflow session. These are seen in the following selected versions trained of Food 101.
@@ -68,11 +73,9 @@ Luckily, the Google team also built Tensorboard, and web tool that visualizes da
 #### V2 and V3
 These models are run by retraining only the final softmax layer. After getting several hyperparameters figured out, our V2 model ran for 10,000 iterations at a 0.003 learning rate.
 
-
 V2 took 20 minutes to run on Deepthought and its top-1 accuracy is around 54%. The cross entropy has not plateaued significantly, so we decided to train V3 longer.
 
 V3 ran for 20,000 iterations at 0.005 learning rate. The training took 40 minutes with these results:
-
 
 Top-1 accuracy is at ~60% (a 5% improvement), and cross entropy decreased from 2.1 to 1.8. At this point, the cross-entropy loss function does look like it has been plateauing, and so we assumed that this is as far as final-layer training would get us and that we would need to try alternative methods. 
 
@@ -87,9 +90,9 @@ In fine-tuning, the final layer is repurposed just like before. However, all nod
 After running evaluations, we see that the top-1 precision is 0.684 and top-5 recall is 0.889 on 50016 examples. This do seem like promising figures, but when we ran our modified `label_image` script several times, the predictions are much worse than the prior results. This could be because of incorrect hyperparameters or not enough training duration. 
 
 ## Code structure
-For the food recognition part, we used functions in different scripts and imported them across scripts. Each function has its own purpose, from using tensor flow to label images, to cropping a image after detecting plates, to graphing.
 
-`dcnns` contains scripts that train and validate our model. This trained models are then referenced in `meal_recognition`, which contains the full pipeline.
+`dcnns` contains scripts that train and validate our model. This trained models are then referenced in `meal_recognition`, which contains the full pipeline. 
+Inside `meal_recognition`, we used functions in different scripts and imported them across scripts. Each function has its own purpose, from using tensor flow to label images, to cropping a image after detecting plates, to graphing.
 
 ## Challenges
 Because none of us had much machine learning experience, getting into this project was fairly difficult. It was challenging to determine a good starting place or even determine if the project was feasible. To tackle this, we read through many papers and tutorials. During this process, we discovered the training methods done in this project, and we had to find good resources along the way.
@@ -106,11 +109,15 @@ Some of the learnings in process include server and local workflows. Sinces mode
 Another big learning comes from utilizing existing code and a jumping-off point for a new project versus writing code from scratch. Using existing code is useful for us to get good results when tackling a large image recognition problem. However, trying to modify existing code to do additional work required much deeper research into the code. While it was educational, every time we wanted to do something more complex it was hard to make a change that was useful as a result. For longer term projects, I definitely recommend playing with existing codebases because we did find it educational to learn how complex models are built and tested.
 
 ## Future work
-There were several directions which we researched/attempted that did not make the scope of our project because of debugging and training work. Given additional time, we would love to complete these:
 
-T-SNE visualizations. Analogous to PCAs as a way to represent multidimensional data in lower dimension space, this technique would visually enhance the results of our models. Based on some articles, it seems that T-SNE performs better than PCA at revealing clusters. We couldn’t complete this because batch running our model was problematic, and this visualization could not directly improve our model. However, it would definitely make fine-tuning more understandable, as our fine-tuned model’s results definitely underperformed our understanding of the quantitative results.
-Spatial transformer networks. Additional ways for us to pre-process the input data is to train another network that normalizes our images for us. Spatial transformer networks can make the input more spatially invariant, which should make the whole network simpler to train.
-Retraining deeper layers without fine-tuning the whole model. Through learning deeper about SLIM, Google’s library for implementing DCNNs like Inception, we may be able to point to a deeper layer, set up a new bottleneck, and train the remaining Inception Module (mixed) layers. In the tutorial code, additional nodes were introduced that made this process seem pretty daunting. We were not able to figure it out, but this could be even more promising than fine-tuning.
-Implement image segmentation to separate different foods. Oval detection has helped identify plates, and additional preprocessing may separate different food items before sending them into the model.
+*There were several directions which we researched/attempted that did not make the scope of our project because of debugging and training work. Given additional time, we would love to complete these:
+
+*T-SNE visualizations. Analogous to PCAs as a way to represent multidimensional data in lower dimension space, this technique would visually enhance the results of our models. Based on some articles, it seems that T-SNE performs better than PCA at revealing clusters. We couldn’t complete this because batch running our model was problematic, and this visualization could not directly improve our model. However, it would definitely make fine-tuning more understandable, as our fine-tuned model’s results definitely underperformed our understanding of the quantitative results.
+
+*Spatial transformer networks. Additional ways for us to pre-process the input data is to train another network that normalizes our images for us. Spatial transformer networks can make the input more spatially invariant, which should make the whole network simpler to train.
+
+*Retraining deeper layers without fine-tuning the whole model. Through learning deeper about SLIM, Google’s library for implementing DCNNs like Inception, we may be able to point to a deeper layer, set up a new bottleneck, and train the remaining Inception Module (mixed) layers. In the tutorial code, additional nodes were introduced that made this process seem pretty daunting. We were not able to figure it out, but this could be even more promising than fine-tuning.
+
+*Implement image segmentation to separate different foods. Oval detection has helped identify plates, and additional preprocessing may separate different food items before sending them into the model.
 
 
