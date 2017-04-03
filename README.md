@@ -14,6 +14,8 @@ In this case, it correctly identified it as icecream.
 ## Plate Isolator. 
 The step in our data pipeline was to isolate just the food in an image with possibly many visual features. Inspired by [DeepFood](https://arxiv.org/abs/1606.05675), where they manually drew a bounding box for increased performance. Our method crops the image automatically by leveraging a common trait in many food images - that the food is on an ellipsoid or circular plate. We implemented the method presented in [Nie et al 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3739713/). 
 
+![Plate Isolation](https://github.com/CompRoboMealVision/meal_recognition/blob/master/resources/Plate_Isolation.png)
+
 Our method for plate isolation comprises of four main steps:
 Pre-process images and isolate the longest edges
 Generate random points on this edges  and find the normals on those edges.
@@ -53,20 +55,20 @@ We chose Inception over other models because of it’s good documentation and tu
 Successfully training a model requires understanding on the results output from the training and evaluation process. These are a few concepts we need to understand to evaluate the quality of a network.
 
 * Accuracy
-The accuracy is the percentage of the images in a batch that were labeled with the correct class.
-*Cross-validation
-Normally in machine learning a set of data is divided into 2 batches, one for training and one for testing. Cross-validation means using rounds of different partitions of training and testing sets and then averaging the accuracy value across the rounds.  
+ The accuracy is the percentage of the images in a batch that were labeled with the correct class.
+* Cross-validation
+ Normally in machine learning a set of data is divided into 2 batches, one for training and one for testing. Cross-validation means using rounds of different partitions of training and testing sets and then averaging the accuracy value across the rounds.  
 * Loss
-The loss function is error function that depends on each weight between each layer of the network.  The error is a quantitative measure of how much the predicted label differ from the actual label. Training the model involves minimizing the loss function.
+ The loss function is error function that depends on each weight between each layer of the network.  The error is a quantitative measure of how much the predicted label differ from the actual label. Training the model involves minimizing the loss function.
 
 * Cross-entropy
-Cross-entropy is a loss function that gives a glimpse into how well the learning process is progressing. More specifically, it is measured as the distance between two probability vectors, namely, the predicted probability vector and the label vector. A lower cross entropy is better.
+ Cross-entropy is a loss function that gives a glimpse into how well the learning process is progressing. More specifically, it is measured as the distance between two probability vectors, namely, the predicted probability vector and the label vector. A lower cross entropy is better.
 * Precision
-In machine learning, precision is the ratio of true positives to all identified positives (sum of true positives and false positives). It measures how many items selected are actually relevant. For example, if our model identified 8 images as strawberry shortcake but 3 of them are actually apple pie, the precision would be ⅝. Precision measures how useful the prediction is. 
+ In machine learning, precision is the ratio of true positives to all identified positives (sum of true positives and false positives). It measures how many items selected are actually relevant. For example, if our model identified 8 images as strawberry shortcake but 3 of them are actually apple pie, the precision would be ⅝. Precision measures how useful the prediction is. 
 * Recall
-Recall is the ratio of true positives to all actual positives. It measures what fraction of relevant images are selected and how complete the prediction is. 
+ Recall is the ratio of true positives to all actual positives. It measures what fraction of relevant images are selected and how complete the prediction is. 
 * Sparsity
-Sparsity occurs when among all the coefficients in a model, only a few are non-zero. This improves performance, as not all nodes need to be activated to produce a good result.
+ Sparsity occurs when among all the coefficients in a model, only a few are non-zero. This improves performance, as not all nodes need to be activated to produce a good result.
 
 Luckily, the Google team also built Tensorboard, and web tool that visualizes data output from a Tensorflow session. These are seen in the following selected versions trained of Food 101.
 
