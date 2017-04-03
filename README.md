@@ -82,9 +82,13 @@ Luckily, the Google team also built Tensorboard, and web tool that visualizes da
 #### V2 and V3
 These models are run by retraining only the final softmax layer. After getting several hyperparameters figured out, our V2 model ran for 10,000 iterations at a 0.003 learning rate.
 
+##### V2 accuracy
+
 ![V2 accuracy](resources/food_v2/accuracy.png)
 
 ![V2 accuracy results](resources/food_v2/accuracy_result.png)
+
+##### V2 cross-entropy
 
 ![V2 cross-entropy](resources/food_v2/cross_entropy.png)
 
@@ -92,9 +96,13 @@ V2 took 20 minutes to run on Deepthought and its top-1 accuracy is around 54%. T
 
 V3 ran for 20,000 iterations at 0.005 learning rate. The training took 40 minutes with these results:
 
+##### V3 accuracy
+
 ![V3 accuracy](resources/food_v3/accuracy.png)
 
 ![V3 accuracy results](resources/food_v3/accuracy_result.png)
+
+##### V3 cross-entropy
 
 ![V3 cross-entropy](resources/food_v3/cross_entropy.png)
 
@@ -105,9 +113,13 @@ Top-1 accuracy is at ~60% (a 5% improvement), and cross entropy decreased from 2
 #### V4
 By revisiting the DeepFood paper, we saw that their model can do 77.4% top-1 accuracy after 250,000 iterations on Food-101. (Note that this was through fine-tuning, which trains the whole model). Inspired by this, V4 (using original methods) ran for 250,000 iterations at a 0.01 learning rate.
 
+##### V4 accuracy
+
 ![V4 accuracy](resources/food_v4/accuracy.png)
 
 ![V4 accuracy results](resources/food_v4/accuracy_result.png)
+
+##### V4 cross entropy
 
 ![V4 cross-entropy](resources/food_v4/cross_entropy.png)
 
@@ -118,7 +130,11 @@ After over eight hours of training, we were able to see another 8% increase in a
 #### V5 - Fine-tuning approach
 In fine-tuning, the final layer is repurposed just like before. However, all nodes in the network are available for tweaking. Because of this, fine-tuning is more expensive than just re-training the final layer, and we could only run our model 44,000 cycles after 26 hours. Additionally, the fine-tuning scripts did not offer running training and evaluation at the same time.
 
+##### V5 total loss (cross-entropy) for training
+
 ![V5 total loss](resources/food_v5/total_loss.png)
+
+##### V5 Weights sparsity
 
 ![V5 sparsity](resources/food_v5/sparsity.png)
 
