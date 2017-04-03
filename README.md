@@ -53,6 +53,14 @@ There are several great examples of final-layer retraining, where a network’s 
 
 We chose Inception over other models because of it’s good documentation and tutorials, as well its strengths in having a [lower memory and energy footprint](https://adeshpande3.github.io/adeshpande3.github.io/The-9-Deep-Learning-Papers-You-Need-To-Know-About.html).
 
+![Inception model](resources/graphs/model.png)
+
+*The layer groups of Inception.*
+
+![Inception model](resources/graphs/model_final_layers.png)
+
+*These were the extra layers that facilitated retraining of the final softmax layer.*
+
 ### Analysis
 Successfully training a model requires understanding on the results output from the training and evaluation process. These are a few concepts we need to understand to evaluate the quality of a network.
 
