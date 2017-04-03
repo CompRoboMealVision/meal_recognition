@@ -15,7 +15,10 @@ def plot_bar_graph(labels, scores, bins):
     rects = ax.bar(ind, heights, width)
     ax.set_xticks(ind)
     ax.set_xticklabels((labels))
+    ax.set_ylabel('Probablity')
+    ax.set_title('Top 5 food categories probablities')
     plt.show()
+
     
 
 if __name__ == '__main__':
