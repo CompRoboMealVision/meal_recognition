@@ -9,6 +9,7 @@ The goal of this project was to programatically label food images. Although this
 
 For example, given an image of icecream, it outputs the probablity of the top five classes. 
 ![ginger icecream](https://github.com/CompRoboMealVision/meal_recognition/blob/master/resources/ginger_icecream_hist.png)
+
 In this case, it correctly identified it as icecream. 
 
 ## Plate Isolator. 
